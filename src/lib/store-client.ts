@@ -50,6 +50,7 @@ export interface SavedItem {
   topic?: string | null;
   tags?: string[];
 
+  model?: string | null;
   payload: Record<string, unknown>;
 }
 
