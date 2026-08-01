@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Card, Empty, Eyebrow, Pill } from './Shell';
+import { ReelPlayer } from './ReelPlayer';
 import { Thumb } from './Thumb';
 import { starred } from '@/lib/collections';
 import type { SavedItem } from '@/lib/store-client';
@@ -346,16 +347,7 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
 
         {/* Hero + evidence, sticky on desktop. */}
         <aside className="w-full shrink-0 space-y-4 lg:sticky lg:top-[76px] lg:w-[360px] lg:self-start">
-          <div className="relative overflow-hidden rounded-2xl" style={{ background: cat.tint }}>
-            <div className="h-64">
-              <Thumb shortcode={shortcode} category={item.category} fill />
-            </div>
-            {item.confidence && item.category !== 'other' && (
-              <span className="absolute right-3 top-3">
-                <Pill tone={conf.tone}>{conf.label}</Pill>
-              </span>
-            )}
-          </div>
+          <ReelPlayer shortcode={shortcode} category={item.category} />
 
           <div className="flex flex-wrap gap-2">
             {/* Directions only at high confidence: medium means the city is

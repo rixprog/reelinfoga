@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { ReelPlayerModal } from './ReelPlayer';
 import { Card, Empty, Eyebrow, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import { type Collection, collections, starred } from '@/lib/collections';
@@ -25,6 +26,7 @@ export function ReelsGrid({ collectionId }: { collectionId?: string }) {
   const [conf, setConf] = useState<Set<string>>(new Set());
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [playing, setPlaying] = useState<string | null>(null);
   const [cols, setCols] = useState<Collection[]>([]);
   const [stars, setStars] = useState<string[]>([]);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,6 +109,8 @@ export function ReelsGrid({ collectionId }: { collectionId?: string }) {
 
   return (
     <div>
+      <ReelPlayerModal shortcode={playing} onClose={() => setPlaying(null)} />
+
       <div className="flex gap-2.5">
         <input
           value={q}
@@ -308,6 +312,33 @@ export function ReelsGrid({ collectionId }: { collectionId?: string }) {
                   {item.title ?? 'Untitled'}
                 </span>
               </span>
+              {!selecting && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Play reel"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPlaying(item.shortcode);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPlaying(item.shortcode);
+                    }
+                  }}
+                  className="absolute inset-0 grid place-items-center opacity-0 transition
+                             group-hover:opacity-100 group-focus-within:opacity-100"
+                >
+                  <span className="grid size-10 place-items-center rounded-full bg-white/95 shadow-md">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--primary)">
+                      <path d="M8 5.2v13.6a.6.6 0 0 0 .92.5l10.6-6.8a.6.6 0 0 0 0-1l-10.6-6.8a.6.6 0 0 0-.92.5Z" />
+                    </svg>
+                  </span>
+                </span>
+              )}
               {selecting && (
                 <span
                   className={`absolute inset-0 border-[3px] transition ${
