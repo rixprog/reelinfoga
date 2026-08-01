@@ -162,11 +162,27 @@ laptop processes ~40s
 phone polls while foregrounded → card appears in Library
 ```
 
-**Notifications:** skip push for now. Push needs Expo's service and a registered token,
-which is real setup for a laptop-hosted backend that cannot reach out to the phone.
-Instead the app polls while open, and `notify.py` already sends Telegram/email — which
-arrives on the phone anyway, from the laptop, with zero new work. Revisit push when the
-backend moves off the laptop.
+**Notifications: the app handles it itself. No Telegram, no email, no push service.**
+
+Two mechanisms cover everything, and neither needs a server that can reach the phone:
+
+1. **While the app is open** — it polls, and the processing strip turns into the
+   finished card. That is the whole "your reel is ready" story; nobody needs a
+   notification for something they did forty seconds ago.
+
+2. **Deadline reminders — scheduled LOCAL notifications.** This is the good bit. When
+   the library syncs, the app reads `deadline_date` on every opportunity and schedules
+   on-device notifications at T-7, T-2 and the morning of — the same milestones
+   `reminders.py` already defines. `expo-notifications` fires these **with the app
+   closed and the laptop switched off**, because they live in the OS scheduler rather
+   than on a server.
+
+   For this product that is strictly better than push: no Expo push service, no token
+   registration, no backend that has to be awake at 9am, and it works on a plane.
+   Re-schedule on each sync, and cancel anything whose deadline moved or passed.
+
+`notify.py` stays for the CLI and for a future hosted backend, but it is out of scope
+for the phone.
 
 **Geofencing:** phase 3. It is on-device (`expo-location`), so it still works with a
 laptop backend — it just needs the nearby list, which `/api/reels` already returns.
@@ -183,7 +199,7 @@ list, one detail screen. This is the demo.
 
 **Phase 3 — the payoff.** Geofencing and proximity alerts. Trip planner on mobile.
 
-Ship Phase 1 and rehearse it on a phone hotspot before starting Phase 2.
+Ship Phase 1 and rehearse the whole flow end to end before starting Phase 2.
 
 ---
 
