@@ -1,0 +1,53 @@
+[
+  {
+    "id": "reel-1722500000001",
+    "title": "Fort Kochi Waterfront Cafe Experience",
+    "category": "Food",
+    "summary": "A waterside cafe in Fort Kochi specializing in fresh seafood and authentic Kerala filter coffee with a oceanfront view.",
+    "language": "English",
+    "transcript": "Check out this cozy spot in Fort Kochi. They serve incredible fish curry and fresh filter coffee right by the coast.",
+    "ocrText": "Open Daily 8AM - 10PM | Ph: +91 98470 12345",
+    "caption": "Best coffee view in Kochi! #KochiEats #KeralaCafes",
+    "thumbnailUrl": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80",
+    "originalUrl": "https://www.instagram.com/reel/C3x91A4L_11",
+    "createdAt": "2026-07-31T14:20:00Z",
+    "entities": {
+      "restaurantName": "The Wharf Café",
+      "location": "Fort Kochi, Kerala",
+      "address": "Near Old Lighthouse Beach, Fort Kochi",
+      "phoneNumber": "+91 98470 12345",
+      "price": "₹250 - ₹600",
+      "time": "8:00 AM - 10:00 PM"
+    },
+    "reminderStatus": {
+      "type": "location",
+      "created": false,
+      "details": "Fort Kochi, Kerala"
+    }
+  },
+  {
+    "id": "reel-1722500000002",
+    "title": "Stanford Machine Learning Open Course",
+    "category": "Course",
+    "summary": "Stanford University Machine Learning fundamentals program available online with full curriculum materials.",
+    "language": "English",
+    "transcript": "Stanford CS229 Machine Learning lecture series covers neural networks, supervised learning models, and deep learning algorithms.",
+    "ocrText": "Enroll: cs229.stanford.edu | Free Certificate",
+    "caption": "Master ML for free! Link in bio. #MachineLearning #Stanford",
+    "thumbnailUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80",
+    "originalUrl": "https://www.instagram.com/reel/C4z88B2M_22",
+    "createdAt": "2026-07-30T10:15:00Z",
+    "entities": {
+      "website": "cs229.stanford.edu",
+      "price": "Free",
+      "company": "Stanford University",
+      "deadline": "August 15, 2026"
+    },
+    "reminderStatus": {
+      "type": "deadline",
+      "created": true,
+      "date": "2026-08-15",
+      "details": "Stanford ML Course Registration"
+    }
+  }
+]
