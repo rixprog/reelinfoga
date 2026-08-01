@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "ReelBrain",
+    "slug": "reelbrain",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "reelbrain",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FAFAFA"
+    },
+    "android": {
+      "package": "com.reelbrain.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#7C3AED"
+      },
+      "edgeToEdgeEnabled": true,
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "text/*"
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "ios": {
+      "bundleIdentifier": "com.reelbrain.app",
+      "supportsTablet": false
+    }
+  }
+}
