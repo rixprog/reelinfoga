@@ -82,9 +82,21 @@ export default function Settings() {
               </Text>
             </View>
           )}
-          <Pressable onPress={() => setUrl(DEFAULT_BASE_URL)}>
-            <Text style={s.reset}>Reset to default</Text>
-          </Pressable>
+          <View style={s.presets}>
+            <Pressable style={s.preset} onPress={() => setUrl(DEFAULT_BASE_URL)}>
+              <Text style={s.presetText}>Tailscale</Text>
+            </Pressable>
+            {/* While the phone is plugged in, `adb reverse tcp:3000 tcp:3000`
+                makes the laptop's port appear as localhost here — no Tailscale
+                needed for development. */}
+            <Pressable style={s.preset} onPress={() => setUrl('http://localhost:3000')}>
+              <Text style={s.presetText}>USB (localhost)</Text>
+            </Pressable>
+          </View>
+          <Text style={s.presetHelp}>
+            Tailscale works anywhere. USB works while the phone is plugged in with
+            adb reverse running.
+          </Text>
         </Card>
 
         <Label style={{ marginTop: 26 }}>How to save a reel</Label>
@@ -135,6 +147,15 @@ const s = StyleSheet.create({
   },
   buttonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   result: { marginTop: 10, padding: 11, borderRadius: 10 },
-  reset: { marginTop: 12, fontSize: 12, color: c.primary, fontWeight: '600' },
+  presets: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  preset: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+  },
+  presetText: { fontSize: 12, fontWeight: '600', color: c.primary },
+  presetHelp: { marginTop: 8, fontSize: 11, color: c.textFaint, lineHeight: 16 },
   step: { fontSize: 14, color: c.text, marginBottom: 6 },
 });
