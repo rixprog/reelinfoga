@@ -210,8 +210,14 @@ usually burned into the video as text — a poster, a slide, a form screenshot. 
 every frame carefully.
 
 2. DATES ARE THE POINT. Resolve every date to YYYY-MM-DD.
-   - TODAY's date is given in the evidence. Use it for relative phrases like \
-"next Friday", "in 2 weeks", "month end", "tomorrow".
+   - Two dates are given in the evidence: TODAY, and the date the REEL WAS \
+POSTED. Resolve relative phrases ("next Friday", "in 2 weeks", "tomorrow", \
+"this weekend") against the POST date — that is when the creator was speaking. \
+Using today instead silently shifts the deadline by however long the reel sat \
+in the user's saved folder before they got round to it.
+   - Use TODAY only to decide whether the resolved date has already passed.
+   - A recurring-sounding title ("Hello Friday", "Weekend Bootcamp") is a series \
+name, not a date. Do not turn it into a deadline.
    - If a date has no year ("August 15"), choose the NEXT occurrence on or after \
 TODAY, and set date_confidence to "inferred".
    - Distinguish the APPLICATION DEADLINE from the EVENT DATE. "Hackathon on Sept \
@@ -244,11 +250,43 @@ def build_deadline_evidence(reel: ReelData, transcript, ranked) -> str:
     import comments as comments_mod
 
     today = date.today()
-    parts = [
-        "=== TODAY ===",
-        f"{today.isoformat()} ({today.strftime('%A, %d %B %Y')})",
-        "Resolve every relative or partial date against this.",
-        "",
+    posted = getattr(reel, "date_utc", None)
+
+    parts = ["=== TODAY ===",
+             f"{today.isoformat()} ({today.strftime('%A, %d %B %Y')})", ""]
+
+    # The post date is the anchor for relative dates, not today. A reel saying
+    # "next Friday" means the Friday after IT WAS POSTED; resolving that against
+    # today silently shifts the deadline by however long the reel sat unsaved.
+    if posted:
+        try:
+            posted_d = posted.date() if hasattr(posted, "date") else posted
+            age = (today - posted_d).days
+            parts += [
+                "=== REEL POSTED ON ===",
+                f"{posted_d.isoformat()} ({posted_d.strftime('%A, %d %B %Y')}) "
+                f"— {age} day(s) ago",
+                "Resolve relative phrases ('next Friday', 'tomorrow', 'this "
+                "weekend') against THIS date, not against today.",
+            ]
+            if age > 45:
+                parts.append(
+                    f"WARNING: this reel is {age} days old. Any deadline it "
+                    f"mentions has probably already passed — say so rather than "
+                    f"rolling the date forward to a future year."
+                )
+            parts.append("")
+        except Exception:
+            pass
+    else:
+        parts += [
+            "=== REEL POSTED ON ===",
+            "(unknown)",
+            "Without a post date, do NOT resolve relative phrases like 'next "
+            "Friday' — return null instead of guessing.",
+            "",
+        ]
+    parts += [
         "=== CREATOR ===", f"@{reel.owner}"
         + (f"\nbio: {reel.owner_bio}" if reel.owner_bio else ""), "",
         "=== TAGGED ACCOUNTS ===",
