@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DeadlineCard } from '@/components/DeadlineCard';
 import { SavedList } from '@/components/SavedList';
 import { TravelCard } from '@/components/TravelCard';
-import { TravelPlanner } from '@/components/TravelPlanner';
+import { TripPlanner } from '@/components/TripPlanner';
 import type { Opportunity, TravelExtraction } from '@/lib/deadline';
 import {
   AnalyzeResult,
@@ -288,7 +288,7 @@ export default function Home() {
 
         <SavedList refreshKey={job?.status === 'done' ? job.id : null} />
 
-        <TravelPlanner refreshKey={job?.status === 'done' ? job.id : null} />
+        <TripPlanner refreshKey={job?.status === 'done' ? job.id : null} />
       </main>
     </div>
   );
