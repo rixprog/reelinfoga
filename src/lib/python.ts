@@ -43,6 +43,6 @@ export function pythonJson(
     return { ok: true, data };
   } catch {
     const tail = result.err.trim().split('\n').slice(-3).join(' ');
-    return { ok: false, error: tail || 'The planner failed to return a result.' };
+    return { ok: false, error: tail || 'The backend returned nothing usable.' };
   }
 }
