@@ -1,0 +1,31 @@
+# secrets — never commit
+.env
+*.session
+session-*
+
+# instaloader session files
+.instaloader-*
+
+# downloaded media
+downloads/
+seed/
+out/
+*.mp4
+*.wav
+*.jpg
+*.jpeg
+*.png
+*.json.xz
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.v/
+*.egg-info/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store

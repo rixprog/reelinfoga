@@ -1,0 +1,41 @@
+{
+  "food_spot": {
+    "is_food_content": true,
+    "place_name": "Star One Restaurants",
+    "place_aliases": [
+      "Star One"
+    ],
+    "area": null,
+    "city": "Abu Dhabi",
+    "state": null,
+    "landmark": null,
+    "full_address": "Abu Dhabi, UAE",
+    "dishes": [
+      "Porotta",
+      "Beef Fry"
+    ],
+    "cuisine": "Kerala",
+    "price_band": "mid",
+    "veg_status": "non-veg",
+    "evidence": [
+      {
+        "field": "place_name",
+        "source": "frame",
+        "quote": "Star One The Foodie's Paradise"
+      },
+      {
+        "field": "city",
+        "source": "frame",
+        "quote": "Dubai, Abudhabi"
+      },
+      {
+        "field": "dishes",
+        "source": "frame",
+        "quote": "Porotta and Beef Fry"
+      }
+    ],
+    "search_summary": "Star One Restaurant in Abu Dhabi serves classic Kerala-style Porotta and Beef Fry. The video showcases the popular combination served on a banana leaf.",
+    "confidence": "high",
+    "reasoning": "The restaurant name and city are explicitly stated in the final frame of the video."
+  }
+}
