@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DeadlineCard } from '@/components/DeadlineCard';
 import { SavedList } from '@/components/SavedList';
-import type { Opportunity } from '@/lib/deadline';
+import { TravelCard } from '@/components/TravelCard';
+import { TravelPlanner } from '@/components/TravelPlanner';
+import type { Opportunity, TravelExtraction } from '@/lib/deadline';
 import {
   AnalyzeResult,
   CONFIDENCE_UI,
@@ -93,11 +95,15 @@ export default function Home() {
   const result = job?.result;
   const category = result?.category ?? 'food_spot';
   const isDeadline = category === 'deadline';
-  const fs = !isDeadline ? result?.food_spot : undefined;
+  const isTravel = category === 'travel';
+  // The pipeline returns each vertical's payload under the same `food_spot`
+  // key; `category` is what says which shape it actually is.
+  const fs = !isDeadline && !isTravel ? result?.food_spot : undefined;
   const op = isDeadline ? (result?.food_spot as unknown as Opportunity) : undefined;
+  const tr = isTravel ? (result?.food_spot as unknown as TravelExtraction) : undefined;
   const conf = fs ? CONFIDENCE_UI[fs.confidence] : null;
-  const evidence = (isDeadline ? op?.evidence : fs?.evidence) ?? [];
-  const reasoning = (isDeadline ? op?.reasoning : fs?.reasoning) ?? '';
+  const evidence = (op?.evidence ?? tr?.evidence ?? fs?.evidence) ?? [];
+  const reasoning = (op?.reasoning ?? tr?.reasoning ?? fs?.reasoning) ?? '';
 
   return (
     // flex-1, not min-h-full: body is `min-h-full flex flex-col`, so a min-height
@@ -188,7 +194,15 @@ export default function Home() {
           </section>
         )}
 
-        {result && !isDeadline && fs && conf && (
+        {result && isTravel && tr && (
+          <section className="mt-10">
+            <TravelCard t={tr} />
+            <EvidencePanel evidence={evidence} reasoning={reasoning} />
+            <TranscriptPanel result={result} />
+          </section>
+        )}
+
+        {result && !isDeadline && !isTravel && fs && conf && (
           <section className="mt-10">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -273,6 +287,8 @@ export default function Home() {
         )}
 
         <SavedList refreshKey={job?.status === 'done' ? job.id : null} />
+
+        <TravelPlanner refreshKey={job?.status === 'done' ? job.id : null} />
       </main>
     </div>
   );

@@ -126,6 +126,15 @@ def build_record(*, shortcode: str, url: str, category: str, reel: dict,
             "link_in_bio": payload.get("link_in_bio"),
             "confidence": payload.get("confidence"),
         })
+    elif category == "travel":
+        record.update({
+            "title": payload.get("destination"),
+            "destination": payload.get("destination"),
+            "state": payload.get("state"),
+            "best_season": payload.get("best_season"),
+            "place_count": len(payload.get("places") or []),
+            "confidence": payload.get("confidence"),
+        })
     elif category == "food_spot":
         record.update({
             "title": payload.get("place_name"),

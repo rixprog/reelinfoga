@@ -148,6 +148,11 @@ def process(url: str, *, keyframes: int | None = None,
     if category == "deadline":
         spot = verticals.extract_deadline(reel, transcript, frames)
         headline = spot.payload.get("title") or "no opportunity identified"
+    elif category == "travel":
+        spot = verticals.extract_travel(reel, transcript, frames)
+        places = spot.payload.get("places") or []
+        headline = (f"{spot.payload.get('destination') or 'unknown'} "
+                    f"— {len(places)} place(s)")
     else:
         spot = extract.extract_food_spot(reel, transcript, frames)
         spot.category = "food_spot"
@@ -225,10 +230,34 @@ def process(url: str, *, keyframes: int | None = None,
     if not _JSON:
         if spot.category == "deadline":
             summarize_deadline(spot.payload)
+        elif spot.category == "travel":
+            summarize_travel(spot.payload)
         else:
             summarize(spot.payload, reel)
     emit("done", result=result)
     return result
+
+
+def summarize_travel(t: dict) -> None:
+    print(f"\n{'─' * 70}")
+    if not t.get("is_travel_content"):
+        print("  Not travel content.")
+        print(f"{'─' * 70}")
+        return
+    print(f"  DESTINATION {t.get('destination') or '—'}"
+          + (f", {t['state']}" if t.get('state') else ""))
+    if t.get("best_season"):
+        print(f"  SEASON      {t['best_season']}")
+    print(f"  CONFIDENCE  {str(t.get('confidence','?')).upper()}")
+    print(f"\n  PLACES ({len(t.get('places') or [])})")
+    for p in t.get("places") or []:
+        dur = f"{p['duration_minutes']}min" if p.get("duration_minutes") else "—"
+        print(f"    · {p.get('name'):<34} {p.get('place_type'):<11} {dur:<7}"
+              f"{p.get('best_time_of_day') or ''}")
+        if p.get("tips"):
+            print(f"        tip: {p['tips'][:80]}")
+    print(f"\n  {t.get('reasoning','')}")
+    print(f"{'─' * 70}")
 
 
 def summarize_deadline(d: dict) -> None:

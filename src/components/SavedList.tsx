@@ -13,7 +13,7 @@ import { type SavedItem, daysUntil } from '@/lib/store-client';
  */
 export function SavedList({ refreshKey }: { refreshKey: string | null }) {
   const [items, setItems] = useState<SavedItem[]>([]);
-  const [tab, setTab] = useState<'deadline' | 'food_spot'>('deadline');
+  const [tab, setTab] = useState<'deadline' | 'food_spot' | 'travel'>('deadline');
 
   useEffect(() => {
     let cancelled = false;
@@ -30,7 +30,8 @@ export function SavedList({ refreshKey }: { refreshKey: string | null }) {
 
   const deadlines = items.filter((i) => i.category === 'deadline');
   const spots = items.filter((i) => i.category === 'food_spot');
-  const shown = tab === 'deadline' ? deadlines : spots;
+  const trips = items.filter((i) => i.category === 'travel');
+  const shown = tab === 'deadline' ? deadlines : tab === 'travel' ? trips : spots;
 
   if (items.length === 0) return null;
 
@@ -48,6 +49,11 @@ export function SavedList({ refreshKey }: { refreshKey: string | null }) {
           onClick={() => setTab('food_spot')}
           label={`Food spots (${spots.length})`}
         />
+        <Tab
+          active={tab === 'travel'}
+          onClick={() => setTab('travel')}
+          label={`Travel (${trips.length})`}
+        />
       </div>
 
       {shown.length === 0 ? (
@@ -57,6 +63,8 @@ export function SavedList({ refreshKey }: { refreshKey: string | null }) {
           {shown.map((item) =>
             tab === 'deadline' ? (
               <DeadlineRow key={item.shortcode} item={item} />
+            ) : tab === 'travel' ? (
+              <TripRow key={item.shortcode} item={item} />
             ) : (
               <SpotRow key={item.shortcode} item={item} />
             ),
@@ -127,6 +135,19 @@ function DeadlineRow({ item }: { item: SavedItem }) {
           Reel ↗
         </a>
       </div>
+    </li>
+  );
+}
+
+function TripRow({ item }: { item: SavedItem }) {
+  const count = (item as { place_count?: number }).place_count;
+  return (
+    <li className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+      <p className="truncate font-medium">🗺️ {item.title ?? 'Unknown destination'}</p>
+      <p className="mt-0.5 text-xs text-zinc-500">
+        {[count ? `${count} place${count === 1 ? '' : 's'}` : null,
+          (item as { state?: string | null }).state].filter(Boolean).join(' · ')}
+      </p>
     </li>
   );
 }

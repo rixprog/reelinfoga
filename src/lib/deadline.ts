@@ -90,3 +90,36 @@ export function formatDate(iso: string | null): string {
     year: 'numeric',
   });
 }
+
+
+// --- travel vertical ---
+
+export interface TravelPlace {
+  name: string;
+  place_type: string;
+  area: string | null;
+  description: string;
+  duration_minutes: number | null;
+  best_time_of_day: string | null;
+  entry_fee: string | null;
+  tips: string | null;
+}
+
+export interface TravelExtraction {
+  is_travel_content: boolean;
+  destination: string | null;
+  state: string | null;
+  best_season: string | null;
+  summary: string;
+  places: TravelPlace[];
+  evidence: Evidence[];
+  confidence: 'high' | 'medium' | 'low';
+  reasoning: string;
+}
+
+export const PLACE_ICON: Record<string, string> = {
+  waterfall: '💧', viewpoint: '🏞️', trek: '🥾', lake: '🛶', dam: '🌊',
+  beach: '🏖️', temple: '🛕', fort: '🏰', museum: '🏛️', park: '🌳',
+  wildlife: '🐘', restaurant: '🍽️', cafe: '☕', stay: '🏨',
+  activity: '🎯', market: '🛍️', other: '📍',
+};

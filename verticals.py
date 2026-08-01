@@ -21,7 +21,7 @@ import config
 import extract as extract_mod
 from data import ReelData
 
-CATEGORIES = ["food_spot", "deadline", "other"]
+CATEGORIES = ["food_spot", "deadline", "travel", "other"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +39,9 @@ CLASSIFY_SCHEMA = {
                 "deadline = any opportunity with a date you would regret missing: "
                 "internship, job, hackathon, scholarship, admission, workshop, "
                 "event, competition, registration, sale or offer that expires. "
-                "other = neither."
+                "travel = places to visit — a destination, waterfall, viewpoint, "
+                "trek, beach, fort, stay, or a 'things to do in X' list. "
+                "other = none of these."
             ),
         },
         "reason": {"type": "string"},
@@ -58,7 +60,12 @@ a sale/offer with an end date. It still counts if no explicit date is stated —
 "applications open now", "link in bio to apply" and "limited seats" are all deadline \
 content.
 
-Pick "food_spot" only for a specific eatery, dish or food experience.
+Pick "travel" when the reel is about a PLACE TO VISIT — a destination, waterfall, \
+viewpoint, trek, beach, fort, resort, homestay, or a "things to do in X" list. The \
+test is whether someone would save it to plan a trip.
+
+Pick "food_spot" only for a specific eatery, dish or food experience. A restaurant \
+mentioned inside a travel guide about a destination is "travel", not "food_spot".
 
 Otherwise "other".
 """
@@ -452,3 +459,193 @@ def days_until(iso_date: str | None) -> int | None:
     except (ValueError, TypeError):
         return None
     return (d - date.today()).days
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Travel vertical
+# ─────────────────────────────────────────────────────────────────────────────
+
+PLACE_TYPES = [
+    "waterfall", "viewpoint", "trek", "lake", "dam", "beach", "temple", "fort",
+    "museum", "park", "wildlife", "restaurant", "cafe", "stay", "activity",
+    "market", "other",
+]
+
+TRAVEL_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "is_travel_content": {"type": "boolean"},
+        "destination": {
+            "type": ["string", "null"],
+            "description": (
+                "The region the reel is about, as a traveller would name it — "
+                "'Wayanad', 'Munnar', 'Coorg'. This is the grouping key for "
+                "itineraries, so keep it consistent and do not include the state."
+            ),
+        },
+        "state": {"type": ["string", "null"]},
+        "country": {"type": ["string", "null"]},
+        "best_season": {"type": ["string", "null"]},
+        "summary": {"type": "string", "description": "2-3 sentences, English."},
+        "places": {
+            "type": "array",
+            "description": (
+                "Every distinct place shown or named. One reel often covers "
+                "several — a '5 places in Wayanad' reel should yield 5 entries."
+            ),
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": (
+                            "Proper name as it would appear on a map, e.g. "
+                            "'Soochipara Waterfalls'. Not 'the waterfall'."
+                        ),
+                    },
+                    "place_type": {"type": "string", "enum": PLACE_TYPES},
+                    "area": {"type": ["string", "null"]},
+                    "description": {"type": "string"},
+                    "duration_minutes": {
+                        "type": ["integer", "null"],
+                        "description": "Typical time spent there. Used to pack days.",
+                    },
+                    "best_time_of_day": {
+                        "type": ["string", "null"],
+                        "enum": ["early morning", "morning", "afternoon",
+                                 "evening", "night", None],
+                    },
+                    "entry_fee": {"type": ["string", "null"]},
+                    "tips": {"type": ["string", "null"]},
+                },
+                "required": ["name", "place_type", "area", "description",
+                             "duration_minutes", "best_time_of_day",
+                             "entry_fee", "tips"],
+                "additionalProperties": False,
+            },
+        },
+        "evidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "source": {
+                        "type": "string",
+                        "enum": ["frame", "transcript", "caption", "hashtag",
+                                 "comment", "creator_reply", "geotag",
+                                 "tagged_user", "bio"],
+                    },
+                    "quote": {"type": "string"},
+                },
+                "required": ["field", "source", "quote"],
+                "additionalProperties": False,
+            },
+        },
+        "search_summary": {"type": "string"},
+        "confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": (
+                "Confidence in the destination and the place names. Must be 'low' "
+                "if no place could be named specifically enough to find on a map."
+            ),
+        },
+        "reasoning": {"type": "string"},
+    },
+    "required": ["is_travel_content", "destination", "state", "country",
+                 "best_season", "summary", "places", "evidence",
+                 "search_summary", "confidence", "reasoning"],
+    "additionalProperties": False,
+}
+
+TRAVEL_PROMPT = """\
+You extract places worth visiting from an Indian travel reel, so they can be
+geocoded and turned into an itinerary.
+
+How to read the evidence:
+
+1. ON-SCREEN TEXT IS THE STRONGEST SIGNAL. Travel reels caption each location as
+they cut between them — read every frame. A "5 hidden spots in Wayanad" reel
+usually names all five only on screen.
+
+2. NAMES MUST BE MAP-RESOLVABLE. This is the single most important rule: every
+name you return gets looked up on OpenStreetMap. "Soochipara Waterfalls" works;
+"this waterfall", "the second spot", "a hidden gem" do not. If a place is shown
+but never named, leave it out rather than inventing a label — an unfindable name
+produces a wrong pin, and the user drives to it.
+
+3. ONE REEL, MANY PLACES. Do not collapse a list reel into a single entry.
+Extract each place separately with its own type and description.
+
+4. DESTINATION IS THE GROUPING KEY. Use the name a traveller would say —
+"Wayanad", not "Wayanad district, Kerala, India". Itineraries are built by
+grouping on this exact string, so consistency matters more than precision.
+
+5. duration_minutes drives how many places fit in a day. Estimate honestly from
+what the reel shows: a viewpoint is 30 minutes, a waterfall with a trek in is
+120+, a museum 60.
+
+6. best_time_of_day matters for planning. Sunrise viewpoints, waterfalls before
+the afternoon heat, sunset points in the evening.
+
+Rules:
+- DO NOT GUESS a place name. Null and fewer places beat a fabricated one.
+- Every non-null field needs a matching `evidence` entry.
+- If the reel is not about visitable places, set is_travel_content false.
+"""
+
+
+def build_travel_evidence(reel: ReelData, transcript, ranked) -> str:
+    import comments as comments_mod
+
+    parts = [
+        "=== CREATOR ===", f"@{reel.owner}", "",
+        "=== TAGGED ACCOUNTS ===",
+        ", ".join(f"@{u}" for u in reel.tagged_users) or "(none)", "",
+    ]
+    if reel.location_name:
+        coords = (f"  [lat {reel.location_lat}, lng {reel.location_lng}]"
+                  if reel.has_geotag else "")
+        parts += ["=== INSTAGRAM GEOTAG ===", f"{reel.location_name}{coords}",
+                  "This is ground truth for the region.", ""]
+
+    parts += [
+        "=== CAPTION ===", reel.caption or "(empty)", "",
+        "=== HASHTAGS ===",
+        " ".join(f"#{h}" for h in reel.hashtags) or "(none)", "",
+    ]
+
+    if getattr(transcript, "low_confidence", False):
+        parts += [
+            "=== TRANSCRIPT QUALITY WARNING ===",
+            "Whisper had low confidence. If it reads as song lyrics, ignore it. "
+            "If it is garbled speech naming places, use it — but prefer a "
+            "spelling you can read on screen over one you only heard.",
+            "",
+        ]
+
+    parts += [
+        f"=== TRANSCRIPT ({getattr(transcript, 'language', None)}) ===",
+        getattr(transcript, "native", "") or "(no speech detected)", "",
+        "=== TRANSCRIPT (English) ===",
+        getattr(transcript, "english", "") or "(none)", "",
+    ]
+    if ranked:
+        parts += ["=== COMMENTS ===", comments_mod.format_for_llm(ranked), ""]
+
+    parts.append("Extract the places. Return JSON matching the schema.")
+    return "\n".join(parts)
+
+
+def extract_travel(reel: ReelData, transcript, frames: list[Path],
+                   max_comments: int = 30) -> extract_mod.Extraction:
+    import comments as comments_mod
+
+    ranked = comments_mod.rank_comments(reel.comments, limit=max_comments)
+    evidence = build_travel_evidence(reel, transcript, ranked)
+    result = extract_mod.run_extraction(
+        TRAVEL_PROMPT, evidence, reel.video_path, frames, TRAVEL_SCHEMA,
+    )
+    result.category = "travel"
+    return result

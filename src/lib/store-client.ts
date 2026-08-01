@@ -6,7 +6,7 @@
 export interface SavedItem {
   shortcode: string;
   url: string;
-  category: 'deadline' | 'food_spot' | 'other';
+  category: 'deadline' | 'food_spot' | 'travel' | 'other';
   owner: string | null;
   caption: string | null;
   hashtags: string[];
@@ -27,6 +27,12 @@ export interface SavedItem {
 
   city?: string | null;
   area?: string | null;
+
+  // travel vertical
+  destination?: string | null;
+  state?: string | null;
+  best_season?: string | null;
+  place_count?: number;
 
   payload: Record<string, unknown>;
 }
