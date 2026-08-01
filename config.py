@@ -34,6 +34,12 @@ IG_SESSION_FILE = os.getenv("IG_SESSION_FILE") or None
 
 EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "claude-opus-5")
 MAX_COMMENTS = int(os.getenv("MAX_COMMENTS", "100"))
+
+# Media is deleted after extraction by default. Everything downstream reads the
+# extracted JSON, and keeping the video costs ~18 MB per reel for data we never
+# open again. Set KEEP_MEDIA=1 only when debugging the extractor itself.
+KEEP_MEDIA = os.getenv("KEEP_MEDIA", "").lower() in ("1", "true", "yes")
+KEEP_THUMBNAIL = os.getenv("KEEP_THUMBNAIL", "1").lower() in ("1", "true", "yes")
 KEYFRAMES = int(os.getenv("KEYFRAMES", "6"))
 
 # Groq audio models

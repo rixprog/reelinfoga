@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { DeadlineCard } from '@/components/DeadlineCard';
+import { SavedList } from '@/components/SavedList';
+import type { Opportunity } from '@/lib/deadline';
 import {
   AnalyzeResult,
   CONFIDENCE_UI,
@@ -87,8 +90,14 @@ export default function Home() {
     poll(data.id);
   }
 
-  const fs = job?.result?.food_spot;
+  const result = job?.result;
+  const category = result?.category ?? 'food_spot';
+  const isDeadline = category === 'deadline';
+  const fs = !isDeadline ? result?.food_spot : undefined;
+  const op = isDeadline ? (result?.food_spot as unknown as Opportunity) : undefined;
   const conf = fs ? CONFIDENCE_UI[fs.confidence] : null;
+  const evidence = (isDeadline ? op?.evidence : fs?.evidence) ?? [];
+  const reasoning = (isDeadline ? op?.reasoning : fs?.reasoning) ?? '';
 
   return (
     // flex-1, not min-h-full: body is `min-h-full flex flex-col`, so a min-height
@@ -101,8 +110,9 @@ export default function Home() {
             ReelBrain
           </h1>
           <p className="mt-3 max-w-xl text-zinc-400">
-            Paste a food reel. We read the frames, listen to the audio and work out
-            which restaurant it is — even when nobody says the name out loud.
+            Paste any saved reel. We read the frames, listen to the audio, and pull
+            out what actually matters — the restaurant, or the deadline you were
+            going to forget.
           </p>
         </header>
 
@@ -165,7 +175,20 @@ export default function Home() {
           </div>
         )}
 
-        {job?.result && fs && conf && (
+        {result && isDeadline && op && (
+          <section className="mt-10">
+            <DeadlineCard op={op} shortcode={result.reel.shortcode} />
+            <EvidencePanel evidence={evidence} reasoning={reasoning} />
+            <TranscriptPanel result={result} />
+            <p className="mt-4 text-xs text-zinc-600">
+              {result.model} · {result.usage.input_tokens} in /{' '}
+              {result.usage.output_tokens} out ·{' '}
+              {(job!.elapsedMs / 1000).toFixed(1)}s
+            </p>
+          </section>
+        )}
+
+        {result && !isDeadline && fs && conf && (
           <section className="mt-10">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -238,42 +261,54 @@ export default function Home() {
               )}
             </div>
 
-            {/* The evidence panel is the point of the product: every claim is
-                traceable to something we actually saw or heard. */}
-            {fs.evidence.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">
-                  How we know
-                </p>
-                <ul className="mt-3 space-y-2">
-                  {fs.evidence.map((e, i) => (
-                    <li key={i} className="flex gap-3 text-sm">
-                      <span className="mt-0.5 shrink-0 rounded bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-400">
-                        {SOURCE_LABEL[e.source] ?? e.source}
-                      </span>
-                      <span className="text-zinc-300">
-                        <span className="text-zinc-500">{e.field}: </span>
-                        &ldquo;{e.quote}&rdquo;
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 border-t border-zinc-800 pt-3 text-sm text-zinc-500">
-                  {fs.reasoning}
-                </p>
-              </div>
-            )}
-
-            <TranscriptPanel result={job.result} />
+            <EvidencePanel evidence={evidence} reasoning={reasoning} />
+            <TranscriptPanel result={result} />
 
             <p className="mt-4 text-xs text-zinc-600">
-              {job.result.model} · {job.result.usage.input_tokens} in /{' '}
-              {job.result.usage.output_tokens} out ·{' '}
-              {(job.elapsedMs / 1000).toFixed(1)}s
+              {result.model} · {result.usage.input_tokens} in /{' '}
+              {result.usage.output_tokens} out ·{' '}
+              {(job!.elapsedMs / 1000).toFixed(1)}s
             </p>
           </section>
         )}
+
+        <SavedList refreshKey={job?.status === 'done' ? job.id : null} />
       </main>
+    </div>
+  );
+}
+
+/* The evidence panel is the point of the product: every claim is traceable to
+   something we actually saw or heard. Shared by both verticals. */
+function EvidencePanel({
+  evidence,
+  reasoning,
+}: {
+  evidence: { field: string; source: string; quote: string }[];
+  reasoning: string;
+}) {
+  if (evidence.length === 0) return null;
+  return (
+    <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
+      <p className="text-xs uppercase tracking-wide text-zinc-500">How we know</p>
+      <ul className="mt-3 space-y-2">
+        {evidence.map((e, i) => (
+          <li key={i} className="flex gap-3 text-sm">
+            <span className="mt-0.5 shrink-0 rounded bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-400">
+              {SOURCE_LABEL[e.source as keyof typeof SOURCE_LABEL] ?? e.source}
+            </span>
+            <span className="text-zinc-300">
+              <span className="text-zinc-500">{e.field}: </span>
+              &ldquo;{e.quote}&rdquo;
+            </span>
+          </li>
+        ))}
+      </ul>
+      {reasoning && (
+        <p className="mt-4 border-t border-zinc-800 pt-3 text-sm text-zinc-500">
+          {reasoning}
+        </p>
+      )}
     </div>
   );
 }

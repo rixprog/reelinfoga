@@ -237,11 +237,13 @@ def build_system_prompt(*, has_comments: bool, has_geotag: bool,
 
 
 @dataclass
-class FoodSpot:
+class Extraction:
+    """Result of one structured extraction, whichever vertical produced it."""
     payload: dict
     model: str
     input_tokens: int
     output_tokens: int
+    category: str = "food_spot"
 
     def __getitem__(self, k):
         return self.payload[k]
@@ -253,6 +255,10 @@ class FoodSpot:
     @property
     def place_name(self) -> str | None:
         return self.payload.get("place_name")
+
+
+# Kept so existing call sites and tests keep working.
+FoodSpot = Extraction
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -379,15 +385,24 @@ def extract_food_spot(reel: ReelData, transcript, frames: list[Path],
     )
     evidence = build_evidence_block(reel, transcript, ranked)
 
+    return run_extraction(system, evidence, reel.video_path, frames,
+                          FOOD_SPOT_SCHEMA, provider=provider)
+
+
+def run_extraction(system: str, evidence: str, video_path: Path | None,
+                   frames: list[Path], schema: dict,
+                   provider: str | None = None) -> Extraction:
+    """Vertical-agnostic: same call shape, different schema and system prompt."""
     provider = (provider or config.EXTRACTION_PROVIDER).lower()
     if provider == "gemini":
-        return _extract_gemini(system, evidence, reel.video_path, frames)
+        return _extract_gemini(system, evidence, video_path, frames, schema)
     if provider == "claude":
-        return _extract_claude(system, evidence, frames)
+        return _extract_claude(system, evidence, frames, schema)
     raise ValueError(f"Unknown EXTRACTION_PROVIDER {provider!r} (use gemini|claude)")
 
 
-def _extract_claude(system: str, evidence: str, frames: list[Path]) -> FoodSpot:
+def _extract_claude(system: str, evidence: str, frames: list[Path],
+                    schema: dict) -> Extraction:
     content: list[dict] = [_encode(p) for p in frames]
     content.append({"type": "text", "text": evidence})
 
@@ -397,13 +412,13 @@ def _extract_claude(system: str, evidence: str, frames: list[Path]) -> FoodSpot:
         thinking={"type": "adaptive"},
         output_config={
             "effort": "high",
-            "format": {"type": "json_schema", "schema": FOOD_SPOT_SCHEMA},
+            "format": {"type": "json_schema", "schema": schema},
         },
         system=system,
         messages=[{"role": "user", "content": content}],
     )
     text = "".join(b.text for b in resp.content if b.type == "text")
-    return FoodSpot(payload=json.loads(text), model=resp.model,
+    return Extraction(payload=json.loads(text), model=resp.model,
                     input_tokens=resp.usage.input_tokens,
                     output_tokens=resp.usage.output_tokens)
 
@@ -434,7 +449,7 @@ def _gemini_video_part(video_path: Path):
 
 
 def _extract_gemini(system: str, evidence: str, video_path: Path | None,
-                    frames: list[Path]) -> FoodSpot:
+                    frames: list[Path], schema: dict) -> Extraction:
     from google.genai import types
 
     parts = []
@@ -452,11 +467,11 @@ def _extract_gemini(system: str, evidence: str, video_path: Path | None,
         config=types.GenerateContentConfig(
             system_instruction=system,
             response_mime_type="application/json",
-            response_schema=to_gemini_schema(FOOD_SPOT_SCHEMA),
+            response_schema=to_gemini_schema(schema),
             temperature=0,
         ),
     )
     u = resp.usage_metadata
-    return FoodSpot(payload=json.loads(resp.text), model=config.GEMINI_MODEL,
+    return Extraction(payload=json.loads(resp.text), model=config.GEMINI_MODEL,
                     input_tokens=u.prompt_token_count or 0,
                     output_tokens=u.candidates_token_count or 0)

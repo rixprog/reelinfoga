@@ -37,6 +37,45 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(args, check=True, capture_output=True, text=True)
 
 
+def purge_media(work_dir: str | Path, keep_thumbnail: bool = True) -> dict:
+    """
+    Delete the video, audio and keyframes once extraction is done.
+
+    We measured ~18 MB per reel, so a user with 500 saved reels would cost 9 GB of
+    video we never read again — everything downstream (search, reminders, the map)
+    runs on the extracted JSON. Deleting also means we are not sitting on a copy of
+    other people's copyrighted video.
+
+    The thumbnail is kept by default because the UI needs an image per reel and it
+    is a few KB, not video. Pass keep_thumbnail=False to remove that too.
+    """
+    work_dir = Path(work_dir)
+    if not work_dir.exists():
+        return {"freed_bytes": 0, "removed": 0}
+
+    patterns = ["*.mp4", "*.wav", "*.m4a", "*.webm", "*.mkv", "frames/*.jpg"]
+    if not keep_thumbnail:
+        patterns.append("*.jpg")
+
+    freed = 0
+    removed = 0
+    for pattern in patterns:
+        for p in work_dir.glob(pattern):
+            if p.is_file():
+                try:
+                    freed += p.stat().st_size
+                    p.unlink()
+                    removed += 1
+                except OSError:
+                    pass
+
+    frames_dir = work_dir / "frames"
+    if frames_dir.is_dir() and not any(frames_dir.iterdir()):
+        frames_dir.rmdir()
+
+    return {"freed_bytes": freed, "removed": removed}
+
+
 def probe_duration(video_path: str | Path) -> float | None:
     """Duration in seconds, parsed from ffmpeg's own stderr (no ffprobe needed)."""
     proc = subprocess.run(

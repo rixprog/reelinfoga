@@ -23,15 +23,18 @@ import config
 import data
 import extract
 import media
+import store
 import transcribe as transcribe_mod
+import verticals
 
 # Mirrors ProcessingStep in src/lib/types.ts
 STAGES = [
     ("downloading", "Fetching reel"),
     ("extracting_audio", "Extracting frames and audio"),
     ("transcribing", "Transcribing and translating"),
-    ("understanding", "Identifying the food spot"),
-    ("saving", "Saving"),
+    ("classifying", "Working out what this reel is"),
+    ("understanding", "Extracting the details"),
+    ("saving", "Saving and cleaning up"),
 ]
 
 _JSON = False
@@ -125,18 +128,31 @@ def process(url: str, *, keyframes: int | None = None,
     emit("stage", stage="transcribing", status="completed",
          detail=f"language: {transcript.language or 'unknown'}")
 
-    # 4 ── extract
-    emit("stage", stage="understanding", status="processing")
-    log(f"[4/5] extracting food spot ({config.EXTRACTION_PROVIDER})…")
-    spot = extract.extract_food_spot(reel, transcript, frames)
-    log(f"      {spot.input_tokens} in / {spot.output_tokens} out tokens")
-    emit("stage", stage="understanding", status="completed",
-         detail=spot.payload.get("place_name") or "no place identified")
+    # 4 ── route (cheap, text-only) then extract with that vertical's schema
+    emit("stage", stage="classifying", status="processing")
+    log("[4/6] classifying…")
+    routed = verticals.classify(reel, transcript)
+    category = routed.get("category", "other")
+    log(f"      category: {category} — {routed.get('reason','')[:80]}")
+    emit("stage", stage="classifying", status="completed", detail=category)
 
-    # 5 ── persist
+    emit("stage", stage="understanding", status="processing")
+    log(f"[5/6] extracting {category} ({config.EXTRACTION_PROVIDER})…")
+    if category == "deadline":
+        spot = verticals.extract_deadline(reel, transcript, frames)
+        headline = spot.payload.get("title") or "no opportunity identified"
+    else:
+        spot = extract.extract_food_spot(reel, transcript, frames)
+        spot.category = "food_spot"
+        headline = spot.payload.get("place_name") or "no place identified"
+    log(f"      {spot.input_tokens} in / {spot.output_tokens} out tokens")
+    emit("stage", stage="understanding", status="completed", detail=headline)
+
+    # 6 ── persist, then delete the media we no longer need
     emit("stage", stage="saving", status="processing")
     result = {
         "url": url,
+        "category": spot.category,
         "reel": reel.to_dict(),
         "transcript": {
             "language": transcript.language,
@@ -154,13 +170,81 @@ def process(url: str, *, keyframes: int | None = None,
     config.OUT.mkdir(parents=True, exist_ok=True)
     out_path = config.OUT / f"{reel.shortcode}.json"
     out_path.write_text(json.dumps(result, indent=2, ensure_ascii=False, default=str))
-    log(f"[5/5] saved → {out_path}")
-    emit("stage", stage="saving", status="completed")
+
+    record = store.build_record(
+        shortcode=reel.shortcode, url=url, category=spot.category,
+        reel=result["reel"], transcript=result["transcript"],
+        payload=spot.payload, model=spot.model,
+    )
+    store.upsert(record)
+    ics_path = store.write_ics(record)
+    if ics_path:
+        log(f"      calendar file → {ics_path}")
+
+    # Everything downstream runs on the extracted JSON, so the video is dead
+    # weight the moment extraction returns — ~18 MB per reel of it.
+    if config.KEEP_MEDIA:
+        log("[6/6] KEEP_MEDIA set — media retained")
+        freed = {"freed_bytes": 0, "removed": 0}
+    else:
+        freed = media.purge_media(work, keep_thumbnail=config.KEEP_THUMBNAIL)
+        log(f"[6/6] saved → {out_path}  "
+            f"(purged {freed['removed']} media files, "
+            f"{freed['freed_bytes'] / 1e6:.1f} MB)")
+    result["purged"] = freed
+    emit("stage", stage="saving", status="completed",
+         detail=f"freed {freed['freed_bytes'] / 1e6:.1f} MB")
 
     if not _JSON:
-        summarize(spot.payload, reel)
+        if spot.category == "deadline":
+            summarize_deadline(spot.payload)
+        else:
+            summarize(spot.payload, reel)
     emit("done", result=result)
     return result
+
+
+def summarize_deadline(d: dict) -> None:
+    print(f"\n{'─' * 70}")
+    if not d.get("is_opportunity"):
+        print("  Not an opportunity.")
+        print(f"{'─' * 70}")
+        return
+
+    days = verticals.days_until(d.get("deadline_date"))
+    print(f"  TITLE       {d.get('title') or '—'}")
+    print(f"  ORG         {d.get('organisation') or '—'}")
+    print(f"  TYPE        {d.get('opportunity_type') or '—'}")
+
+    if d.get("deadline_date"):
+        when = (f"{abs(days)} days ago" if days is not None and days < 0
+                else "today" if days == 0
+                else f"in {days} days")
+        print(f"  DEADLINE    {d['deadline_date']}  ({when})"
+              f"   [{d.get('date_confidence')}]")
+    else:
+        print(f"  DEADLINE    not stated  ({d.get('deadline_text') or '—'})")
+    if d.get("event_date"):
+        print(f"  EVENT ON    {d['event_date']}")
+
+    for f in ("eligibility", "location", "fee", "stipend", "prize", "contact"):
+        if d.get(f):
+            print(f"  {f.upper():<11} {d[f]}")
+    for link in d.get("registration_links") or []:
+        print(f"  APPLY       {link}")
+    if d.get("link_in_bio"):
+        print("  APPLY       (link in creator's bio)")
+    print(f"  CONFIDENCE  {str(d.get('confidence','?')).upper()}")
+
+    ev = d.get("evidence") or []
+    if ev:
+        print("\n  EVIDENCE")
+        for e in ev[:8]:
+            q = e.get("quote", "")
+            q = q[:64] + "…" if len(q) > 64 else q
+            print(f"    · {e.get('field','?'):<14} {e.get('source','?'):<12} {q}")
+    print(f"\n  {d.get('reasoning','')}")
+    print(f"{'─' * 70}")
 
 
 def summarize(fs: dict, reel: data.ReelData) -> None:
