@@ -21,7 +21,7 @@ import config
 import extract as extract_mod
 from data import ReelData
 
-CATEGORIES = ["food_spot", "deadline", "travel", "other"]
+CATEGORIES = ["food_spot", "deadline", "travel", "recipe", "product", "other"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -41,6 +41,10 @@ CLASSIFY_SCHEMA = {
                 "event, competition, registration, sale or offer that expires. "
                 "travel = places to visit — a destination, waterfall, viewpoint, "
                 "trek, beach, fort, stay, or a 'things to do in X' list. "
+                "recipe = how to COOK something yourself, with ingredients and "
+                "steps. "
+                "product = reviewing, comparing or recommending things to BUY — "
+                "gadgets, headphones, phones, appliances, cosmetics. "
                 "other = none of these."
             ),
         },
@@ -64,10 +68,19 @@ Pick "travel" when the reel is about a PLACE TO VISIT — a destination, waterfa
 viewpoint, trek, beach, fort, resort, homestay, or a "things to do in X" list. The \
 test is whether someone would save it to plan a trip.
 
+Pick "recipe" when the reel teaches you to COOK something — ingredients and steps, \
+filmed in a kitchen. A reel about eating biryani at a restaurant is "food_spot"; a \
+reel about making biryani at home is "recipe".
+
+Pick "product" when the reel reviews, compares, unboxes or recommends things to \
+BUY. The test is whether the viewer would end up shopping.
+
 Pick "food_spot" only for a specific eatery, dish or food experience. A restaurant \
 mentioned inside a travel guide about a destination is "travel", not "food_spot".
 
-Otherwise "other".
+Otherwise "other" — but note that "other" is still extracted into a structured \
+card, so use it whenever none of the above genuinely fits rather than forcing a \
+bad match.
 """
 
 
@@ -649,3 +662,416 @@ def extract_travel(reel: ReelData, transcript, frames: list[Path],
     )
     result.category = "travel"
     return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Recipe vertical
+# ─────────────────────────────────────────────────────────────────────────────
+
+RECIPE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "is_recipe": {"type": "boolean"},
+        "dish_name": {"type": ["string", "null"]},
+        "cuisine": {"type": ["string", "null"]},
+        "description": {"type": "string"},
+        "servings": {"type": ["integer", "null"]},
+        "prep_time_minutes": {"type": ["integer", "null"]},
+        "cook_time_minutes": {"type": ["integer", "null"]},
+        "total_time_minutes": {"type": ["integer", "null"]},
+        "difficulty": {"type": ["string", "null"],
+                       "enum": ["easy", "medium", "hard", None]},
+        "veg_status": {"type": ["string", "null"],
+                       "enum": ["veg", "non-veg", "egg", "vegan", None]},
+        "ingredients": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item": {"type": "string"},
+                    "quantity": {"type": ["string", "null"],
+                                 "description": "e.g. '500', '2', '1/2'."},
+                    "unit": {"type": ["string", "null"],
+                             "description": "e.g. 'g', 'tbsp', 'cups'."},
+                    "notes": {"type": ["string", "null"],
+                              "description": "e.g. 'finely chopped', 'optional'."},
+                },
+                "required": ["item", "quantity", "unit", "notes"],
+                "additionalProperties": False,
+            },
+        },
+        "steps": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "order": {"type": "integer"},
+                    "instruction": {"type": "string"},
+                    "duration_minutes": {"type": ["integer", "null"]},
+                    "tip": {"type": ["string", "null"]},
+                },
+                "required": ["order", "instruction", "duration_minutes", "tip"],
+                "additionalProperties": False,
+            },
+        },
+        "equipment": {"type": "array", "items": {"type": "string"}},
+        "evidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "source": {"type": "string",
+                               "enum": ["frame", "transcript", "caption", "hashtag",
+                                        "comment", "creator_reply", "tagged_user",
+                                        "bio"]},
+                    "quote": {"type": "string"},
+                },
+                "required": ["field", "source", "quote"],
+                "additionalProperties": False,
+            },
+        },
+        "search_summary": {"type": "string"},
+        "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+        "reasoning": {"type": "string"},
+    },
+    "required": ["is_recipe", "dish_name", "cuisine", "description", "servings",
+                 "prep_time_minutes", "cook_time_minutes", "total_time_minutes",
+                 "difficulty", "veg_status", "ingredients", "steps", "equipment",
+                 "evidence", "search_summary", "confidence", "reasoning"],
+    "additionalProperties": False,
+}
+
+RECIPE_PROMPT = """\
+You turn a cooking reel into a recipe someone can actually follow in a kitchen.
+
+How to read the evidence:
+
+1. THE AUDIO CARRIES THE METHOD. Unlike most reels, cooking videos usually have
+real narration — quantities, timings and technique are spoken. Use the transcript
+heavily. On-screen text usually carries the ingredient LIST.
+
+2. QUANTITIES ARE THE POINT. "Some chilli powder" is useless in a kitchen. Pull
+the exact amount whenever it is stated in the audio or shown on screen. If a
+quantity genuinely is not given, set quantity null rather than inventing one — a
+made-up measurement ruins the dish, and the user will trust it.
+
+3. STEPS IN ORDER, AS ACTIONS. Each step is one thing to do. Include timings
+where stated ("fry for 5 minutes"). Do not merge three actions into one step.
+
+4. TIMES. prep_time is chopping and marinating, cook_time is on the heat. If
+marination is long (biryani often needs an hour), say so in the step tip rather
+than hiding it in prep_time.
+
+5. Reels code-mix heavily. Ingredient names may be spoken in Malayalam/Tamil/
+Hindi — give the common English name, and keep the local name in notes when it is
+what a shop would call it.
+
+Rules:
+- DO NOT INVENT quantities, times or steps that are not shown or said.
+- Every non-null field needs a matching `evidence` entry.
+- If the reel is not a cooking tutorial, set is_recipe false.
+"""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Product vertical
+# ─────────────────────────────────────────────────────────────────────────────
+
+PRODUCT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "is_product_content": {"type": "boolean"},
+        "product_category": {
+            "type": ["string", "null"],
+            "description": (
+                "Consistent, generic grouping key — 'budget headphones', "
+                "'smartphones under 20000'. Comparisons are built by grouping on "
+                "this, so keep it broad and repeatable across reels."
+            ),
+        },
+        "verdict": {"type": "string", "description": "The reel's overall take."},
+        "products": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string",
+                             "description": "Full name as sold, e.g. 'boAt Rockerz 450'."},
+                    "brand": {"type": ["string", "null"]},
+                    "price_inr": {
+                        "type": ["integer", "null"],
+                        "description": "Price STATED IN THE REEL. null if not stated.",
+                    },
+                    "price_text": {"type": ["string", "null"],
+                                   "description": "Price exactly as stated."},
+                    "rating_out_of_5": {"type": ["number", "null"]},
+                    "specs": {
+                        "type": "array",
+                        "description": "Comparable attributes, e.g. battery life, driver size.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "value": {"type": "string"},
+                            },
+                            "required": ["label", "value"],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "pros": {"type": "array", "items": {"type": "string"}},
+                    "cons": {"type": "array", "items": {"type": "string"}},
+                    "best_for": {"type": ["string", "null"]},
+                },
+                "required": ["name", "brand", "price_inr", "price_text",
+                             "rating_out_of_5", "specs", "pros", "cons", "best_for"],
+                "additionalProperties": False,
+            },
+        },
+        "evidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "source": {"type": "string",
+                               "enum": ["frame", "transcript", "caption", "hashtag",
+                                        "comment", "creator_reply", "tagged_user",
+                                        "bio"]},
+                    "quote": {"type": "string"},
+                },
+                "required": ["field", "source", "quote"],
+                "additionalProperties": False,
+            },
+        },
+        "search_summary": {"type": "string"},
+        "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+        "reasoning": {"type": "string"},
+    },
+    "required": ["is_product_content", "product_category", "verdict", "products",
+                 "evidence", "search_summary", "confidence", "reasoning"],
+    "additionalProperties": False,
+}
+
+PRODUCT_PROMPT = """\
+You extract products from a review, comparison or unboxing reel so they can be
+compared side by side and shopped for.
+
+How to read the evidence:
+
+1. NAMES MUST BE SHOPPABLE. The name is used to build a store search, so give the
+full model as sold — "boAt Rockerz 450", not "the boAt one" or "black headphones".
+If a product is shown but never named clearly enough to search for, leave it out.
+
+2. PRICES ARE REEL DATA. price_inr is what the REEL said. If the reel never
+states a price, set it null. Never substitute what you think it costs — the user
+will read it as the actual price and budget around it.
+
+3. SPECS SHOULD BE COMPARABLE. Prefer attributes that let two products be lined
+up: battery life, driver size, weight, warranty, connectivity. Use consistent
+labels across products in the same reel so the comparison table lines up.
+
+4. PROS AND CONS COME FROM THE REEL, not from your general knowledge of the
+product. If the reviewer complained about the mic, that is a con; do not add
+issues they never mentioned.
+
+5. product_category is a grouping key across reels. Keep it broad and consistent —
+"budget headphones" not "boAt Rockerz 450 vs OnePlus Bullets". Several reels
+sharing a category is what makes a comparison possible.
+
+Rules:
+- DO NOT INVENT prices, specs or model numbers.
+- Every non-null field needs a matching `evidence` entry.
+- If the reel is not about things to buy, set is_product_content false.
+"""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Generic vertical — the catch-all
+# ─────────────────────────────────────────────────────────────────────────────
+
+GENERIC_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string", "description": "Short, specific headline."},
+        "topic": {
+            "type": "string",
+            "description": "Broad subject, e.g. 'DSA / interview prep', 'fitness'.",
+        },
+        "summary": {"type": "string", "description": "3-4 sentences, English."},
+        "key_points": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "The substance of the reel as bullet points.",
+        },
+        "actionable_items": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Anything the viewer is meant to DO. Empty if nothing.",
+        },
+        "entities": {
+            "type": "object",
+            "properties": {
+                "people": {"type": "array", "items": {"type": "string"}},
+                "organisations": {"type": "array", "items": {"type": "string"}},
+                "places": {"type": "array", "items": {"type": "string"}},
+                "dates": {"type": "array", "items": {"type": "string"}},
+                "prices": {"type": "array", "items": {"type": "string"}},
+                "links": {"type": "array", "items": {"type": "string"}},
+                "tools_or_resources": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["people", "organisations", "places", "dates", "prices",
+                         "links", "tools_or_resources"],
+            "additionalProperties": False,
+        },
+        "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "5-8 lowercase tags for searching later.",
+        },
+        "evidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "source": {"type": "string",
+                               "enum": ["frame", "transcript", "caption", "hashtag",
+                                        "comment", "creator_reply", "tagged_user",
+                                        "bio"]},
+                    "quote": {"type": "string"},
+                },
+                "required": ["field", "source", "quote"],
+                "additionalProperties": False,
+            },
+        },
+        "search_summary": {"type": "string"},
+        "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+        "reasoning": {"type": "string"},
+    },
+    "required": ["title", "topic", "summary", "key_points", "actionable_items",
+                 "entities", "tags", "evidence", "search_summary", "confidence",
+                 "reasoning"],
+    "additionalProperties": False,
+}
+
+GENERIC_PROMPT = """\
+This reel did not fit any specialised category, so you are the fallback. Extract
+it into a useful structured card anyway — nothing the user saved should end up as
+a blank entry.
+
+Capture what the reel is actually FOR. A DSA revision reel should yield the
+concepts covered and the resources named. A fitness reel should yield the
+exercises and the sets. A news clip should yield what happened and who is
+involved.
+
+- key_points is the substance. Be specific: "two-pointer technique for sorted
+  arrays" beats "talks about arrays".
+- actionable_items only when the viewer is meant to do something. Empty array is
+  a perfectly good answer.
+- entities: pull out anything the user might later search by. Leave arrays empty
+  rather than padding them.
+- tags will be used for retrieval months from now, so favour the words the user
+  would actually type.
+- search_summary is what gets embedded for semantic search — write it as a dense,
+  natural description of the reel's content.
+
+Do not invent detail that is not in the reel. A thin reel gets a thin card, and
+that is fine.
+"""
+
+
+def _evidence_block(reel: ReelData, transcript, ranked, tail: str) -> str:
+    """Shared layout for the verticals that need no special framing."""
+    import comments as comments_mod
+
+    parts = [
+        "=== CREATOR ===", f"@{reel.owner}", "",
+        "=== TAGGED ACCOUNTS ===",
+        ", ".join(f"@{u}" for u in reel.tagged_users) or "(none)", "",
+        "=== CAPTION ===", reel.caption or "(empty)", "",
+        "=== HASHTAGS ===",
+        " ".join(f"#{h}" for h in reel.hashtags) or "(none)", "",
+    ]
+    if getattr(transcript, "low_confidence", False):
+        parts += [
+            "=== TRANSCRIPT QUALITY WARNING ===",
+            "Whisper had low confidence. If it reads as song lyrics, ignore it. "
+            "If it is garbled speech that still carries content, use it — but "
+            "treat numbers and names in it with suspicion and prefer anything "
+            "you can read on screen.",
+            "",
+        ]
+    parts += [
+        f"=== TRANSCRIPT ({getattr(transcript, 'language', None)}) ===",
+        getattr(transcript, "native", "") or "(no speech detected)", "",
+        "=== TRANSCRIPT (English) ===",
+        getattr(transcript, "english", "") or "(none)", "",
+    ]
+    if ranked:
+        parts += ["=== COMMENTS ===", comments_mod.format_for_llm(ranked), ""]
+    parts.append(tail)
+    return "\n".join(parts)
+
+
+def _simple_extract(reel: ReelData, transcript, frames: list[Path], *,
+                    prompt: str, schema: dict, category: str, tail: str,
+                    max_comments: int = 30) -> extract_mod.Extraction:
+    import comments as comments_mod
+
+    ranked = comments_mod.rank_comments(reel.comments, limit=max_comments)
+    evidence = _evidence_block(reel, transcript, ranked, tail)
+    result = extract_mod.run_extraction(prompt, evidence, reel.video_path,
+                                        frames, schema)
+    result.category = category
+    return result
+
+
+def extract_recipe(reel, transcript, frames, max_comments: int = 30):
+    return _simple_extract(reel, transcript, frames, prompt=RECIPE_PROMPT,
+                           schema=RECIPE_SCHEMA, category="recipe",
+                           tail="Extract the recipe. Return JSON matching the schema.",
+                           max_comments=max_comments)
+
+
+def extract_product(reel, transcript, frames, max_comments: int = 30):
+    return _simple_extract(reel, transcript, frames, prompt=PRODUCT_PROMPT,
+                           schema=PRODUCT_SCHEMA, category="product",
+                           tail="Extract the products. Return JSON matching the schema.",
+                           max_comments=max_comments)
+
+
+def extract_generic(reel, transcript, frames, max_comments: int = 30):
+    return _simple_extract(reel, transcript, frames, prompt=GENERIC_PROMPT,
+                           schema=GENERIC_SCHEMA, category="other",
+                           tail="Extract this reel. Return JSON matching the schema.",
+                           max_comments=max_comments)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Buy links
+# ─────────────────────────────────────────────────────────────────────────────
+
+def buy_links(product_name: str, brand: str | None = None) -> list[dict]:
+    """
+    Store SEARCH links, not product links.
+
+    Deliberate: a model cannot know a real Amazon ASIN or Flipkart product id, and
+    a fabricated one is a 404 the user hits after we told them where to buy. A
+    search URL is built from the product name we actually extracted, always
+    resolves, and lands them on the right listing.
+    """
+    import urllib.parse
+
+    q = " ".join(x for x in (brand, product_name) if x)
+    # A brand repeated in the name makes the search worse, not better.
+    if brand and product_name.lower().startswith(brand.lower()):
+        q = product_name
+    enc = urllib.parse.quote_plus(q)
+
+    return [
+        {"store": "Amazon", "url": f"https://www.amazon.in/s?k={enc}"},
+        {"store": "Flipkart", "url": f"https://www.flipkart.com/search?q={enc}"},
+        {"store": "Google Shopping",
+         "url": f"https://www.google.com/search?tbm=shop&q={enc}"},
+    ]

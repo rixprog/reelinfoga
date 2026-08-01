@@ -38,7 +38,7 @@ export interface FoodSpot {
 
 export interface AnalyzeResult {
   url: string;
-  category: 'food_spot' | 'deadline' | 'travel' | 'other';
+  category: 'food_spot' | 'deadline' | 'travel' | 'recipe' | 'product' | 'other';
   reel: {
     shortcode: string;
     owner: string;

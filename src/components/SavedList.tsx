@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { TONE_CLASS, TYPE_ICON, countdown, formatDate, href } from '@/lib/deadline';
+import { CATEGORY_META } from '@/lib/cards';
 import { type SavedItem, daysUntil } from '@/lib/store-client';
 
 /**
@@ -13,7 +14,7 @@ import { type SavedItem, daysUntil } from '@/lib/store-client';
  */
 export function SavedList({ refreshKey }: { refreshKey: string | null }) {
   const [items, setItems] = useState<SavedItem[]>([]);
-  const [tab, setTab] = useState<'deadline' | 'food_spot' | 'travel'>('deadline');
+  const [tab, setTab] = useState<string>('deadline');
 
   useEffect(() => {
     let cancelled = false;
@@ -28,10 +29,14 @@ export function SavedList({ refreshKey }: { refreshKey: string | null }) {
     };
   }, [refreshKey]);
 
-  const deadlines = items.filter((i) => i.category === 'deadline');
-  const spots = items.filter((i) => i.category === 'food_spot');
-  const trips = items.filter((i) => i.category === 'travel');
-  const shown = tab === 'deadline' ? deadlines : tab === 'travel' ? trips : spots;
+  const counts = ['deadline', 'food_spot', 'travel', 'recipe', 'product', 'other']
+    .map((c) => ({ c, items: items.filter((i) => i.category === c) }))
+    .filter((x) => x.items.length > 0);
+  const shown = counts.find((x) => x.c === tab)?.items
+    // Falling back to the first non-empty tab means the panel is never blank
+    // just because the default category has nothing in it.
+    ?? counts[0]?.items ?? [];
+  const activeTab = counts.some((x) => x.c === tab) ? tab : counts[0]?.c;
 
   if (items.length === 0) return null;
 
@@ -39,21 +44,14 @@ export function SavedList({ refreshKey }: { refreshKey: string | null }) {
     <section className="mt-14 border-t border-zinc-900 pt-10">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="mr-2 text-lg font-semibold">Saved</h2>
-        <Tab
-          active={tab === 'deadline'}
-          onClick={() => setTab('deadline')}
-          label={`Deadlines (${deadlines.length})`}
-        />
-        <Tab
-          active={tab === 'food_spot'}
-          onClick={() => setTab('food_spot')}
-          label={`Food spots (${spots.length})`}
-        />
-        <Tab
-          active={tab === 'travel'}
-          onClick={() => setTab('travel')}
-          label={`Travel (${trips.length})`}
-        />
+        {counts.map(({ c, items: list }) => (
+          <Tab
+            key={c}
+            active={activeTab === c}
+            onClick={() => setTab(c)}
+            label={`${CATEGORY_META[c]?.icon ?? ''} ${CATEGORY_META[c]?.label ?? c} (${list.length})`}
+          />
+        ))}
       </div>
 
       {shown.length === 0 ? (
@@ -61,12 +59,14 @@ export function SavedList({ refreshKey }: { refreshKey: string | null }) {
       ) : (
         <ul className="mt-4 space-y-2">
           {shown.map((item) =>
-            tab === 'deadline' ? (
+            item.category === 'deadline' ? (
               <DeadlineRow key={item.shortcode} item={item} />
-            ) : tab === 'travel' ? (
+            ) : item.category === 'travel' ? (
               <TripRow key={item.shortcode} item={item} />
-            ) : (
+            ) : item.category === 'food_spot' ? (
               <SpotRow key={item.shortcode} item={item} />
+            ) : (
+              <GenericRow key={item.shortcode} item={item} />
             ),
           )}
         </ul>
@@ -158,6 +158,33 @@ function SpotRow({ item }: { item: SavedItem }) {
       <p className="truncate font-medium">🍽️ {item.title ?? 'Unknown place'}</p>
       <p className="mt-0.5 text-xs text-zinc-500">
         {[item.area, item.city].filter(Boolean).join(', ') || 'Location unresolved'}
+      </p>
+    </li>
+  );
+}
+
+/** Recipe, product and other all reduce to title + one detail line. */
+function GenericRow({ item }: { item: SavedItem }) {
+  const meta = CATEGORY_META[item.category] ?? CATEGORY_META.other;
+  const detail =
+    item.category === 'recipe'
+      ? [
+          item.cuisine,
+          item.total_time_minutes ? `${item.total_time_minutes} min` : null,
+          item.ingredient_count ? `${item.ingredient_count} ingredients` : null,
+        ]
+      : item.category === 'product'
+        ? [item.product_count ? `${item.product_count} products` : null,
+           (item.product_names ?? []).join(', ')]
+        : [item.topic, (item.tags ?? []).slice(0, 4).map((t) => `#${t}`).join(' ')];
+
+  return (
+    <li className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+      <p className="truncate font-medium">
+        {meta.icon} {item.title ?? 'Untitled'}
+      </p>
+      <p className="mt-0.5 truncate text-xs text-zinc-500">
+        {detail.filter(Boolean).join(' · ') || '—'}
       </p>
     </li>
   );

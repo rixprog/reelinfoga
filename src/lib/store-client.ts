@@ -6,7 +6,7 @@
 export interface SavedItem {
   shortcode: string;
   url: string;
-  category: 'deadline' | 'food_spot' | 'travel' | 'other';
+  category: 'deadline' | 'food_spot' | 'travel' | 'recipe' | 'product' | 'other';
   owner: string | null;
   caption: string | null;
   hashtags: string[];
@@ -33,6 +33,22 @@ export interface SavedItem {
   state?: string | null;
   best_season?: string | null;
   place_count?: number;
+
+  // recipe vertical
+  cuisine?: string | null;
+  total_time_minutes?: number | null;
+  ingredient_count?: number;
+  step_count?: number;
+  veg_status?: string | null;
+
+  // product vertical
+  product_category?: string | null;
+  product_count?: number;
+  product_names?: string[];
+
+  // generic vertical
+  topic?: string | null;
+  tags?: string[];
 
   payload: Record<string, unknown>;
 }

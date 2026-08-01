@@ -153,10 +153,22 @@ def process(url: str, *, keyframes: int | None = None,
         places = spot.payload.get("places") or []
         headline = (f"{spot.payload.get('destination') or 'unknown'} "
                     f"— {len(places)} place(s)")
-    else:
+    elif category == "recipe":
+        spot = verticals.extract_recipe(reel, transcript, frames)
+        headline = spot.payload.get("dish_name") or "no dish identified"
+    elif category == "product":
+        spot = verticals.extract_product(reel, transcript, frames)
+        prods = spot.payload.get("products") or []
+        headline = f"{len(prods)} product(s) — {spot.payload.get('product_category') or '?'}"
+    elif category == "food_spot":
         spot = extract.extract_food_spot(reel, transcript, frames)
         spot.category = "food_spot"
         headline = spot.payload.get("place_name") or "no place identified"
+    else:
+        # Nothing the user saved should end up as a blank entry, so the
+        # catch-all still produces a structured, searchable card.
+        spot = verticals.extract_generic(reel, transcript, frames)
+        headline = spot.payload.get("title") or "extracted"
     log(f"      {spot.input_tokens} in / {spot.output_tokens} out tokens")
 
     # "Link in bio" is how a huge share of Indian opportunity reels actually
@@ -232,10 +244,87 @@ def process(url: str, *, keyframes: int | None = None,
             summarize_deadline(spot.payload)
         elif spot.category == "travel":
             summarize_travel(spot.payload)
+        elif spot.category == "recipe":
+            summarize_recipe(spot.payload)
+        elif spot.category == "product":
+            summarize_product(spot.payload)
+        elif spot.category == "other":
+            summarize_generic(spot.payload)
         else:
             summarize(spot.payload, reel)
     emit("done", result=result)
     return result
+
+
+def summarize_recipe(r: dict) -> None:
+    print(f"\n{'─' * 70}")
+    if not r.get("is_recipe"):
+        print("  Not a recipe.")
+        print(f"{'─' * 70}")
+        return
+    print(f"  DISH        {r.get('dish_name') or '—'}")
+    print(f"  CUISINE     {r.get('cuisine') or '—'}   "
+          f"SERVES  {r.get('servings') or '—'}   "
+          f"{r.get('veg_status') or ''}")
+    times = [f"prep {r['prep_time_minutes']}min" if r.get('prep_time_minutes') else None,
+             f"cook {r['cook_time_minutes']}min" if r.get('cook_time_minutes') else None,
+             f"total {r['total_time_minutes']}min" if r.get('total_time_minutes') else None]
+    print(f"  TIME        {' · '.join(t for t in times if t) or '—'}")
+    print(f"\n  INGREDIENTS ({len(r.get('ingredients') or [])})")
+    for i in r.get("ingredients") or []:
+        qty = " ".join(x for x in (i.get("quantity"), i.get("unit")) if x) or "—"
+        note = f"  ({i['notes']})" if i.get("notes") else ""
+        print(f"    · {qty:<12} {i.get('item')}{note}")
+    print(f"\n  STEPS ({len(r.get('steps') or [])})")
+    for st in r.get("steps") or []:
+        dur = f" [{st['duration_minutes']}min]" if st.get("duration_minutes") else ""
+        print(f"    {st.get('order')}. {st.get('instruction')}{dur}")
+        if st.get("tip"):
+            print(f"       tip: {st['tip']}")
+    print(f"{'─' * 70}")
+
+
+def summarize_product(p: dict) -> None:
+    print(f"\n{'─' * 70}")
+    if not p.get("is_product_content"):
+        print("  Not product content.")
+        print(f"{'─' * 70}")
+        return
+    print(f"  CATEGORY    {p.get('product_category') or '—'}")
+    print(f"  VERDICT     {(p.get('verdict') or '')[:120]}")
+    for prod in p.get("products") or []:
+        price = f"₹{prod['price_inr']:,}" if prod.get("price_inr") else (prod.get("price_text") or "price not stated")
+        print(f"\n    {prod.get('name')}   {price}")
+        for sp in prod.get("specs") or []:
+            print(f"      {sp.get('label')}: {sp.get('value')}")
+        for pro in prod.get("pros") or []:
+            print(f"      + {pro}")
+        for con in prod.get("cons") or []:
+            print(f"      - {con}")
+        for link in verticals.buy_links(prod.get("name") or "", prod.get("brand")):
+            print(f"      {link['store']}: {link['url']}")
+    print(f"{'─' * 70}")
+
+
+def summarize_generic(g: dict) -> None:
+    print(f"\n{'─' * 70}")
+    print(f"  TITLE       {g.get('title') or '—'}")
+    print(f"  TOPIC       {g.get('topic') or '—'}")
+    print(f"  TAGS        {', '.join(g.get('tags') or []) or '—'}")
+    print(f"\n  {g.get('summary') or ''}")
+    if g.get("key_points"):
+        print("\n  KEY POINTS")
+        for k in g["key_points"]:
+            print(f"    · {k}")
+    if g.get("actionable_items"):
+        print("\n  DO")
+        for a in g["actionable_items"]:
+            print(f"    → {a}")
+    ent = g.get("entities") or {}
+    for label, vals in ent.items():
+        if vals:
+            print(f"  {label:<18} {', '.join(vals)}")
+    print(f"{'─' * 70}")
 
 
 def summarize_travel(t: dict) -> None:

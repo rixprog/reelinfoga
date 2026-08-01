@@ -135,6 +135,25 @@ def build_record(*, shortcode: str, url: str, category: str, reel: dict,
             "place_count": len(payload.get("places") or []),
             "confidence": payload.get("confidence"),
         })
+    elif category == "recipe":
+        record.update({
+            "title": payload.get("dish_name"),
+            "cuisine": payload.get("cuisine"),
+            "total_time_minutes": payload.get("total_time_minutes"),
+            "ingredient_count": len(payload.get("ingredients") or []),
+            "step_count": len(payload.get("steps") or []),
+            "veg_status": payload.get("veg_status"),
+            "confidence": payload.get("confidence"),
+        })
+    elif category == "product":
+        prods = payload.get("products") or []
+        record.update({
+            "title": payload.get("product_category") or "Products",
+            "product_category": payload.get("product_category"),
+            "product_count": len(prods),
+            "product_names": [p.get("name") for p in prods],
+            "confidence": payload.get("confidence"),
+        })
     elif category == "food_spot":
         record.update({
             "title": payload.get("place_name"),
@@ -143,7 +162,12 @@ def build_record(*, shortcode: str, url: str, category: str, reel: dict,
             "confidence": payload.get("confidence"),
         })
     else:
-        record["title"] = payload.get("title") or payload.get("place_name")
+        record.update({
+            "title": payload.get("title") or payload.get("place_name"),
+            "topic": payload.get("topic"),
+            "tags": payload.get("tags") or [],
+            "confidence": payload.get("confidence"),
+        })
 
     return record
 

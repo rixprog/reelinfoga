@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { GenericCard, ProductCard, RecipeCard } from '@/components/Cards';
 import { DeadlineCard } from '@/components/DeadlineCard';
+import { SearchPanel } from '@/components/SearchPanel';
 import { SavedList } from '@/components/SavedList';
 import { TravelCard } from '@/components/TravelCard';
 import { TripPlanner } from '@/components/TripPlanner';
+import type { Generic, ProductExtraction, Recipe } from '@/lib/cards';
 import type { Opportunity, TravelExtraction } from '@/lib/deadline';
 import {
   AnalyzeResult,
@@ -96,14 +99,21 @@ export default function Home() {
   const category = result?.category ?? 'food_spot';
   const isDeadline = category === 'deadline';
   const isTravel = category === 'travel';
+  const isRecipe = category === 'recipe';
+  const isProduct = category === 'product';
+  const isOther = category === 'other';
   // The pipeline returns each vertical's payload under the same `food_spot`
   // key; `category` is what says which shape it actually is.
-  const fs = !isDeadline && !isTravel ? result?.food_spot : undefined;
+  const fs = category === 'food_spot' ? result?.food_spot : undefined;
   const op = isDeadline ? (result?.food_spot as unknown as Opportunity) : undefined;
   const tr = isTravel ? (result?.food_spot as unknown as TravelExtraction) : undefined;
+  const rc = isRecipe ? (result?.food_spot as unknown as Recipe) : undefined;
+  const pd = isProduct ? (result?.food_spot as unknown as ProductExtraction) : undefined;
+  const gn = isOther ? (result?.food_spot as unknown as Generic) : undefined;
   const conf = fs ? CONFIDENCE_UI[fs.confidence] : null;
-  const evidence = (op?.evidence ?? tr?.evidence ?? fs?.evidence) ?? [];
-  const reasoning = (op?.reasoning ?? tr?.reasoning ?? fs?.reasoning) ?? '';
+  const payload = op ?? tr ?? rc ?? pd ?? gn ?? fs;
+  const evidence = payload?.evidence ?? [];
+  const reasoning = payload?.reasoning ?? '';
 
   return (
     // flex-1, not min-h-full: body is `min-h-full flex flex-col`, so a min-height
@@ -202,7 +212,17 @@ export default function Home() {
           </section>
         )}
 
-        {result && !isDeadline && !isTravel && fs && conf && (
+        {result && (rc || pd || gn) && (
+          <section className="mt-10">
+            {rc && <RecipeCard r={rc} />}
+            {pd && <ProductCard p={pd} />}
+            {gn && <GenericCard g={gn} />}
+            <EvidencePanel evidence={evidence} reasoning={reasoning} />
+            <TranscriptPanel result={result} />
+          </section>
+        )}
+
+        {result && fs && conf && (
           <section className="mt-10">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -285,6 +305,8 @@ export default function Home() {
             </p>
           </section>
         )}
+
+        <SearchPanel refreshKey={job?.status === 'done' ? job.id : null} />
 
         <SavedList refreshKey={job?.status === 'done' ? job.id : null} />
 
