@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { TONE_CLASS, TYPE_ICON, countdown, formatDate, href } from '@/lib/deadline';
 import { CATEGORY_META } from '@/lib/cards';
 import { type SavedItem, daysUntil } from '@/lib/store-client';
+import { Thumb } from './Thumb';
 
 /**
  * Everything saved so far, deadlines first.
@@ -86,7 +87,9 @@ function DeadlineRow({ item }: { item: SavedItem }) {
         cd.tone === 'expired' ? 'opacity-50' : ''
       }`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex items-start gap-3">
+        <Thumb shortcode={item.shortcode} category={item.category} />
+        <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium">
             <span className="mr-2">
@@ -105,6 +108,7 @@ function DeadlineRow({ item }: { item: SavedItem }) {
         >
           {cd.text}
         </span>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -142,23 +146,29 @@ function DeadlineRow({ item }: { item: SavedItem }) {
 function TripRow({ item }: { item: SavedItem }) {
   const count = (item as { place_count?: number }).place_count;
   return (
-    <li className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-      <p className="truncate font-medium">🗺️ {item.title ?? 'Unknown destination'}</p>
-      <p className="mt-0.5 text-xs text-zinc-500">
-        {[count ? `${count} place${count === 1 ? '' : 's'}` : null,
-          (item as { state?: string | null }).state].filter(Boolean).join(' · ')}
-      </p>
+    <li className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+      <Thumb shortcode={item.shortcode} category={item.category} />
+      <div className="min-w-0">
+        <p className="truncate font-medium">🗺️ {item.title ?? 'Unknown destination'}</p>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          {[count ? `${count} place${count === 1 ? '' : 's'}` : null,
+            (item as { state?: string | null }).state].filter(Boolean).join(' · ')}
+        </p>
+      </div>
     </li>
   );
 }
 
 function SpotRow({ item }: { item: SavedItem }) {
   return (
-    <li className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-      <p className="truncate font-medium">🍽️ {item.title ?? 'Unknown place'}</p>
-      <p className="mt-0.5 text-xs text-zinc-500">
-        {[item.area, item.city].filter(Boolean).join(', ') || 'Location unresolved'}
-      </p>
+    <li className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+      <Thumb shortcode={item.shortcode} category={item.category} />
+      <div className="min-w-0">
+        <p className="truncate font-medium">🍽️ {item.title ?? 'Unknown place'}</p>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          {[item.area, item.city].filter(Boolean).join(', ') || 'Location unresolved'}
+        </p>
+      </div>
     </li>
   );
 }
@@ -179,13 +189,16 @@ function GenericRow({ item }: { item: SavedItem }) {
         : [item.topic, (item.tags ?? []).slice(0, 4).map((t) => `#${t}`).join(' ')];
 
   return (
-    <li className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-      <p className="truncate font-medium">
-        {meta.icon} {item.title ?? 'Untitled'}
-      </p>
-      <p className="mt-0.5 truncate text-xs text-zinc-500">
-        {detail.filter(Boolean).join(' · ') || '—'}
-      </p>
+    <li className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+      <Thumb shortcode={item.shortcode} category={item.category} />
+      <div className="min-w-0">
+        <p className="truncate font-medium">
+          {meta.icon} {item.title ?? 'Untitled'}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-zinc-500">
+          {detail.filter(Boolean).join(' · ') || '—'}
+        </p>
+      </div>
     </li>
   );
 }

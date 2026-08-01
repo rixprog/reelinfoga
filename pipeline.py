@@ -120,6 +120,20 @@ def process(url: str, *, keyframes: int | None = None,
                                      count=keyframes,
                                      duration=reel.video_duration)
     log(f"      {len(frames)} frames")
+
+    # Guarantee every reel has an image. Instagram's own thumbnail is missing on
+    # the yt-dlp path and on any reel whose fetch partially failed, but keyframe
+    # extraction has already succeeded by this point — so promote one. Taken from
+    # a third of the way in: frame 0 is usually a title card or a black frame.
+    if not reel.thumbnail_path or not Path(reel.thumbnail_path).exists():
+        if frames:
+            import shutil
+            pick = frames[len(frames) // 3]
+            thumb = work / "thumb.jpg"
+            shutil.copy(pick, thumb)
+            reel.thumbnail_path = thumb
+            log(f"      no source thumbnail — promoted {pick.name}")
+
     emit("stage", stage="extracting_audio", status="completed",
          detail=f"{len(frames)} keyframes")
 

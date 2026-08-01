@@ -294,12 +294,18 @@ def fetch_via_ytdlp(url: str, target_dir: Path) -> ReelData:
         "quiet": True,
         "no_warnings": True,
         "noprogress": True,
+        # The video is purged after extraction, but the thumbnail is the only
+        # image the UI ever has for a reel — without this the fallback path
+        # produces entries that can never show a picture.
+        "writethumbnail": True,
     }
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
     caption = info.get("description") or ""
     videos = sorted(target_dir.glob("*.mp4"))
+    thumbs = [p for ext in ("*.jpg", "*.jpeg", "*.webp", "*.png")
+              for p in sorted(target_dir.glob(ext))]
 
     return ReelData(
         url=url,
@@ -316,6 +322,7 @@ def fetch_via_ytdlp(url: str, target_dir: Path) -> ReelData:
         video_duration=info.get("duration"),
         accessibility_caption=None,
         video_path=videos[0] if videos else None,
+        thumbnail_path=thumbs[0] if thumbs else None,
         logged_in=False,
     )
 

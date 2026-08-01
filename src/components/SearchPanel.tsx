@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { CATEGORY_META, inr } from '@/lib/cards';
+import { Thumb } from './Thumb';
 
 interface Result {
   shortcode: string;
@@ -116,13 +117,12 @@ export function SearchPanel({ refreshKey }: { refreshKey: string | null }) {
             return (
               <li
                 key={r.shortcode}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+                className="flex gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
               >
+                <Thumb shortcode={r.shortcode} category={r.category} size={64} />
+                <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="font-medium">
-                    <span className="mr-2">{meta.icon}</span>
-                    {r.title ?? 'Untitled'}
-                  </p>
+                  <p className="font-medium">{r.title ?? 'Untitled'}</p>
                   <span className="shrink-0 rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] text-zinc-400">
                     {meta.label}
                   </span>
@@ -148,6 +148,7 @@ export function SearchPanel({ refreshKey }: { refreshKey: string | null }) {
                   >
                     Reel ↗
                   </a>
+                </div>
                 </div>
               </li>
             );

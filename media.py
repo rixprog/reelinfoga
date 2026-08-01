@@ -53,15 +53,19 @@ def purge_media(work_dir: str | Path, keep_thumbnail: bool = True) -> dict:
     if not work_dir.exists():
         return {"freed_bytes": 0, "removed": 0}
 
+    # NOTE: "*.webm" would also match nothing here, but yt-dlp can write a
+    # .webp thumbnail — which must survive when keep_thumbnail is set.
     patterns = ["*.mp4", "*.wav", "*.m4a", "*.webm", "*.mkv", "frames/*.jpg"]
     if not keep_thumbnail:
-        patterns.append("*.jpg")
+        patterns += ["*.jpg", "*.jpeg", "*.webp", "*.png"]
+
+    keep = {"thumb.jpg"} if keep_thumbnail else set()
 
     freed = 0
     removed = 0
     for pattern in patterns:
         for p in work_dir.glob(pattern):
-            if p.is_file():
+            if p.is_file() and p.name not in keep:
                 try:
                     freed += p.stat().st_size
                     p.unlink()

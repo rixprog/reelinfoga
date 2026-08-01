@@ -282,6 +282,7 @@ def search(query: str, limit: int = 10, category: str | None = None,
         out.append({
             "shortcode": k,
             "title": item.get("title"),
+            "thumbnail": bool(item.get("thumbnail")),
             "category": item.get("category"),
             "owner": item.get("owner"),
             "url": item.get("url"),
