@@ -96,24 +96,57 @@ which is a bad trade at this stage.
 
 ---
 
-## 5. The two things that will actually break
+## 5. Connectivity: Tailscale, and it is already set up
 
-**Your laptop's IP changes with every network.** Hardcoding it guarantees a dead app
-at the venue. So: the backend URL lives in settings, persisted, with a "Test
-connection" button that hits `/api/reels` and reports plainly. Ship this on day one,
-not as polish — it is the difference between debugging for ten seconds and ten minutes.
+**Use Tailscale.** It is installed on the laptop and the phone is already on the
+tailnet (`motorola edge 60 fusion`, just offline). Setup is: open the app on the phone.
 
-**Many venue and campus wifi networks block device-to-device traffic** (AP isolation).
-Your phone and laptop can both have internet and still not see each other. This kills
-the demo silently and is not obvious when it happens. Mitigations, in order of
-preference:
+```
+laptop   fedora   100.87.174.58   fedora.tail786f1.ts.net
+phone    motorola edge 60 fusion  100.115.90.12
 
-1. **Phone hotspot, laptop joins it.** Always works, no dependencies. Rehearse on it.
-2. `npx expo start --tunnel` / ngrok — works through anything, adds latency.
-3. Tailscale on both — solid, needs setup on the day.
+verified: GET /api/reels over the tailnet → 200 in 19ms
+```
 
-Test #1 the day before. This is the highest-risk item in the whole plan and it has
-nothing to do with code.
+**Base URL: `http://fedora.tail786f1.ts.net:3000`**
+
+That MagicDNS name is the important part — it never changes. The "laptop IP changes
+per network" problem I flagged simply stops existing. You still want the settings
+screen with a Test-connection button (a laptop that has slept or dropped off the
+tailnet needs to be diagnosable in ten seconds, not ten minutes), but you set the
+value once and never touch it again.
+
+### Why this beats the alternatives
+
+First, a measurement that reframes "fastest". What actually crosses the phone↔laptop
+link is tiny:
+
+```
+POST /api/analyze     ~100 bytes   (just the URL)
+poll response         ~1 KB
+/api/reels            40 KB        (the WHOLE library)
+thumbnail             ~69 KB
+
+by contrast, laptop → internet, per reel:
+Instagram video       ~18 MB       ← never crosses the phone link
+Gemini + Groq         ~1 MB        ← never crosses the phone link
+```
+
+Bandwidth is irrelevant here. So the choice is about reliability, not speed:
+
+| | Setup | Works on venue wifi | Cost |
+|---|---|---|---|
+| Plain LAN IP | none | **No** — AP isolation blocks device-to-device, silently | — |
+| Phone hotspot | 1 min | Yes | **Burns your mobile data**: the laptop's internet now goes through the phone, so every reel's 18 MB video download and every API call comes out of your plan |
+| **Tailscale** | **done** | **Yes** | none — laptop keeps its own wifi for the heavy traffic |
+| ngrok / expo tunnel | 2 min | Yes | public relay, added latency, random URL on free tier |
+
+Tailscale also does NAT traversal, so when both devices are on the same wifi it
+connects **directly** — it is not a relay and costs nothing in latency. It only falls
+back to a relay when direct fails, and at 40 KB payloads that is still fine.
+
+**Fallback if the tailnet misbehaves on the day:** phone hotspot with the laptop
+joined. Accept the data cost, it always works. Worth one rehearsal.
 
 ---
 
