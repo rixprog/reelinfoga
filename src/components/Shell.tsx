@@ -30,27 +30,34 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-8 px-5">
+        <div className="mx-auto flex h-[60px] w-full max-w-[1400px] items-center gap-8 px-5">
           <Link href="/" className="flex items-center gap-2.5">
             <Logo />
             <span className="text-[15px] font-semibold tracking-tight">ReelBrain</span>
           </Link>
 
-          <nav className="hidden items-center gap-7 sm:flex">
+          <nav className="ml-auto hidden items-center gap-1 sm:flex">
             {NAV.map((n) => {
               const active = n.match(path);
               return (
                 <Link
                   key={n.href}
                   href={n.href}
-                  className={`relative py-4 text-sm transition ${
-                    active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink'
-                  }`}
+                  className={`flex w-[62px] flex-col items-center gap-1 rounded-xl py-1.5
+                              transition ${
+                                active
+                                  ? 'bg-primary-soft'
+                                  : 'hover:bg-background'
+                              }`}
                 >
-                  {n.label}
-                  {active && (
-                    <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />
-                  )}
+                  <TabIcon name={n.label} active={active} />
+                  <span
+                    className={`text-[11px] leading-none ${
+                      active ? 'font-semibold text-primary' : 'text-ink-muted'
+                    }`}
+                  >
+                    {n.label}
+                  </span>
                 </Link>
               );
             })}

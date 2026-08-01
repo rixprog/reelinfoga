@@ -68,54 +68,22 @@ export function MapView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/reels', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then(async (d) => {
-        const list: SavedItem[] = d.items ?? [];
-        setItems(list);
-        // Anything already geocoded comes back on the itinerary route, so the map
-        // does not have to re-run Nominatim just to draw pins.
-        const dests = [
-          ...new Set(
-            list
-              .filter((i) => i.category === 'travel')
-              .map((i) => (i.payload as any)?.destination)
-              .filter(Boolean),
-          ),
-        ] as string[];
-        const found: Place[] = [];
-        for (const dest of dests) {
-          try {
-            const r = await fetch('/api/trip/plan', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ destination: dest, days: 1 }),
-            });
-            if (!r.ok) continue;
-            const t = await r.json();
-            for (const s of t.route ?? []) {
-              if (typeof s.lat === 'number')
-                found.push({
-                  shortcode: s.source_reel ?? '',
-                  name: s.name,
-                  category: 'travel',
-                  sub: dest,
-                  lat: s.lat,
-                  lon: s.lon,
-                  approximate: s.approximate,
-                });
-            }
-          } catch {
-            /* a destination that fails to plan simply has no pins */
-          }
-        }
-        setGeo(found);
+    // /api/places geocodes only — no language model. Calling the trip planner
+    // here (as an earlier version did) meant an LLM ran just to draw pins.
+    Promise.all([
+      fetch('/api/reels', { cache: 'no-store' }).then((r) => r.json()),
+      fetch('/api/places', { cache: 'no-store' }).then((r) => r.json()),
+    ])
+      .then(([reels, geo]) => {
+        setItems(reels.items ?? []);
+        setGeo(geo.places ?? []);
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const places = useMemo(() => {
-    const all = [...toPlaces(items), ...geo];
+    const all = [...geo, ...toPlaces(items)];
     const seen = new Set<string>();
     return all
       .filter((p) => {
@@ -127,7 +95,15 @@ export function MapView() {
       .filter((p) => filter === 'all' || p.category === filter);
   }, [items, geo, filter]);
 
-  if (!loading && places.length === 0) {
+  if (loading) {
+    return (
+      <div className="grid h-[60vh] place-items-center text-sm text-ink-muted">
+        Locating your saved places…
+      </div>
+    );
+  }
+
+  if (places.length === 0) {
     return (
       <Empty
         title="Nothing on the map yet"
@@ -172,7 +148,7 @@ export function MapView() {
       </aside>
 
       <div className="relative min-h-0 flex-1">
-        <div className="absolute left-3 top-3 z-[500] flex rounded-full border border-line bg-surface p-1 shadow-sm">
+        <div className="absolute right-3 top-3 z-[500] flex rounded-full border border-line bg-surface p-1 shadow-sm">
           {(['all', 'food_spot', 'travel'] as const).map((k) => (
             <button
               key={k}

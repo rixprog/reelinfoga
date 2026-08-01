@@ -37,6 +37,15 @@ const CTA: Record<string, string> = {
   other: 'Open full breakdown',
 };
 
+function Meta({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
+  return (
+    <div className="flex gap-2">
+      {k && <dt className="shrink-0 text-ink-faint">{k}:</dt>}
+      <dd className={strong ? 'font-semibold' : 'text-ink-muted'}>{v}</dd>
+    </div>
+  );
+}
+
 export function Analyze() {
   const [url, setUrl] = useState('');
   const [stages, setStages] = useState<Stage[]>([]);
@@ -157,25 +166,31 @@ export function Analyze() {
                   one truncates its labels and reads as a checkout wizard. */}
               {i < stages.length - 1 && (
                 <span
-                  className="absolute left-[7px] top-5 h-full w-px"
+                  className="absolute left-[8px] top-6 h-full w-[1.5px]"
                   style={{
                     background:
                       s.status === 'completed' ? 'var(--primary)' : 'var(--border)',
                   }}
                 />
               )}
-              <span className="relative z-10 mt-[3px] grid size-[15px] shrink-0 place-items-center">
+              <span className="relative z-10 mt-[2px] grid size-[18px] shrink-0 place-items-center">
                 {s.status === 'completed' ? (
-                  <span className="size-[13px] rounded-full bg-primary" />
+                  <span className="grid size-[18px] place-items-center rounded-full bg-primary">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" strokeWidth="3.4" strokeLinecap="round"
+                         strokeLinejoin="round">
+                      <path d="M4 12.5 9.5 18 20 6.5" />
+                    </svg>
+                  </span>
                 ) : s.status === 'processing' ? (
                   <>
-                    <span className="absolute size-[15px] animate-ping rounded-full bg-primary/30" />
-                    <span className="size-[13px] rounded-full border-[3px] border-primary bg-surface" />
+                    <span className="absolute size-[18px] animate-ping rounded-full bg-primary/25" />
+                    <span className="size-[18px] rounded-full border-[3px] border-primary bg-surface" />
                   </>
                 ) : s.status === 'error' ? (
                   <span className="size-[13px] rounded-full bg-[#DC2626]" />
                 ) : (
-                  <span className="size-[11px] rounded-full border-[1.5px] border-line bg-surface" />
+                  <span className="size-[16px] rounded-full border-[1.5px] border-[#D4D4D8] bg-surface" />
                 )}
               </span>
 
@@ -202,35 +217,50 @@ export function Analyze() {
       )}
 
       {(fetched || result) && (
-        <Card className="mt-2 flex gap-4 p-4">
-          <Thumb
-            shortcode={result?.reel.shortcode ?? ''}
-            category={result?.category}
-            size={64}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-ink-muted">
-              {result
-                ? [
-                    `@${result.reel.owner}`,
-                    result.reel.likes ? `${result.reel.likes.toLocaleString('en-IN')} likes` : null,
-                    result.reel.video_duration ? `${Math.round(result.reel.video_duration)}s` : null,
-                    result.transcript.language?.toUpperCase(),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')
-                : 'Fetched — reading it now'}
-            </p>
-            <p className="mt-1 line-clamp-2 text-sm">
-              {result?.reel.caption || 'No caption'}
-            </p>
+        <div className="mt-4">
+          <div className="relative w-[210px] overflow-hidden rounded-2xl bg-background">
+            <div className="aspect-[9/16]">
+              <Thumb
+                shortcode={result?.reel.shortcode ?? ''}
+                category={result?.category}
+                fill
+              />
+            </div>
+            {result?.reel.video_duration ? (
+              <span className="absolute right-2 top-2 rounded-md bg-black/65 px-1.5 py-0.5
+                               text-[11px] font-semibold tabular-nums text-white">
+                {Math.floor(result.reel.video_duration / 60)}:
+                {String(Math.round(result.reel.video_duration % 60)).padStart(2, '0')}
+              </span>
+            ) : null}
           </div>
-        </Card>
+
+          <dl className="mt-4 space-y-1.5 text-sm">
+            {result ? (
+              <>
+                <Meta k="" v={`@${result.reel.owner}`} strong />
+                {!!result.reel.likes && (
+                  <Meta k="Likes" v={result.reel.likes.toLocaleString('en-IN')} />
+                )}
+                {!!result.reel.video_duration && (
+                  <Meta k="Duration" v={`${Math.round(result.reel.video_duration)}s`} />
+                )}
+                {!!result.transcript.language && (
+                  <Meta k="Language" v={result.transcript.language.toUpperCase()} />
+                )}
+                {!!result.reel.caption && <Meta k="Caption" v={result.reel.caption} />}
+              </>
+            ) : (
+              <p className="text-ink-muted">Fetched — reading it now…</p>
+            )}
+          </dl>
+        </div>
       )}
 
       {result && (
-        <div className="mt-8 border-t border-line pt-8">
+        <Card className="mt-6 p-5">
           <div className="flex flex-wrap items-center gap-2">
+            <span className="eyebrow">Category</span>
             <Pill tone="violet">{cat.one}</Pill>
             {p.confidence && (
               <Pill tone={p.confidence === 'high' ? 'ok' : p.confidence === 'medium' ? 'warn' : 'flat'}>
@@ -240,24 +270,30 @@ export function Analyze() {
             {d !== null && <Pill tone={countdown(d, p.deadline_passed).tone}>{countdown(d, p.deadline_passed).text}</Pill>}
           </div>
 
-          <h2 className="mt-3 text-[26px] font-bold tracking-[-0.02em]">
+          <h2 className="mt-2 text-[22px] font-bold tracking-[-0.02em]">
             {title ?? 'Extracted'}
           </h2>
-          {where && <p className="mt-1 text-ink-muted">{where}</p>}
+          {where && (
+            <p className="mt-2 text-sm">
+              <span className="text-ink-faint">Location: </span>
+              <span className="text-ink-muted">{where}</span>
+            </p>
+          )}
           {(p.summary || p.description) && (
-            <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
-              {p.summary || p.description}
+            <p className="mt-2 text-sm leading-relaxed">
+              <span className="text-ink-faint">Summary: </span>
+              <span className="text-ink-muted">{p.summary || p.description}</span>
             </p>
           )}
 
           <Link
             href={`/reel/${result.reel.shortcode}`}
-            className="mt-6 inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold
-                       text-white transition hover:bg-[#6D28D9]"
+            className="mt-5 flex w-full items-center justify-center rounded-xl bg-primary
+                       px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6D28D9]"
           >
-            {CTA[result.category] ?? 'Open full view'} →
+            View details
           </Link>
-        </div>
+        </Card>
       )}
     </div>
   );

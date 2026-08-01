@@ -89,33 +89,54 @@ export function HistoryList() {
                 });
                 return (
                   <Card key={i.shortcode} className="p-4">
-                    <div className="flex gap-4">
-                      <span className="tnum hidden w-11 shrink-0 pt-0.5 text-xs text-ink-faint sm:block">
-                        {time}
-                      </span>
-                      <Thumb shortcode={i.shortcode} category={i.category} size={48} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
+                    {/* Two columns: what was saved on the left, what the SYSTEM
+                        did on the right. This is the only screen where run
+                        details belong, so they get their own column rather than
+                        being smuggled into the summary line. */}
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                      <div className="flex min-w-0 flex-1 gap-3">
+                        <span className="tnum hidden w-11 shrink-0 pt-0.5 text-xs text-ink-faint sm:block">
+                          {time}
+                        </span>
+                        <Thumb shortcode={i.shortcode} category={i.category} size={48} />
+                        <div className="min-w-0 flex-1">
                           <p className="font-semibold">{i.title ?? 'Untitled'}</p>
-                          <Pill>{categoryOf(i.category).one}</Pill>
+                          <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
+                            {p?.search_summary || p?.summary || p?.description || 'No summary'}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="eyebrow">Category</span>
+                            <Pill>{categoryOf(i.category).one}</Pill>
+                            {i.confidence && (
+                              <Pill
+                                tone={
+                                  i.confidence === 'high'
+                                    ? 'ok'
+                                    : i.confidence === 'medium'
+                                      ? 'warn'
+                                      : 'flat'
+                                }
+                              >
+                                {i.confidence.toUpperCase()}
+                              </Pill>
+                            )}
+                          </div>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
-                          {p?.search_summary || p?.summary || p?.description || 'No summary'}
-                        </p>
-                        {/* The only screen that reports what the SYSTEM did, so
-                            run details belong here and nowhere else. Kept quiet. */}
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-faint">
-                          <span className="sm:hidden">{time}</span>
-                          {i.owner && <span>@{i.owner}</span>}
-                          {i.language && <span>{i.language.toUpperCase()}</span>}
-                          {i.model && <span>{i.model}</span>}
-                          <Link
-                            href={`/reel/${i.shortcode}`}
-                            className="font-semibold text-primary"
-                          >
-                            View more →
-                          </Link>
-                        </div>
+                      </div>
+
+                      <div className="shrink-0 space-y-1 border-t border-line pt-3 text-[11px]
+                                      text-ink-faint sm:w-44 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                        <p className="sm:hidden">{time}</p>
+                        {i.language && <p>Language: {i.language.toUpperCase()}</p>}
+                        {i.model && <p className="truncate">Model: {i.model}</p>}
+                        {i.owner && <p className="truncate">@{i.owner}</p>}
+                        <Link
+                          href={`/reel/${i.shortcode}`}
+                          className="mt-2 inline-flex rounded-lg border border-line px-3 py-1.5
+                                     text-[11px] font-semibold text-primary hover:border-primary/40"
+                        >
+                          View more
+                        </Link>
                       </div>
                     </div>
                   </Card>

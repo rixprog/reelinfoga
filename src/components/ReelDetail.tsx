@@ -1,46 +1,48 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { Card, Eyebrow, Pill } from './Shell';
+import { Card, Empty, Eyebrow, Pill } from './Shell';
+import { Thumb } from './Thumb';
+import { starred } from '@/lib/collections';
 import type { SavedItem } from '@/lib/store-client';
 import { SOURCE_LABEL, categoryOf, countdown, daysUntil, inr } from '@/lib/ui';
 
 const CONFIDENCE = {
-  high: { label: 'High confidence', tone: 'ok' as const, hint: 'Place and city identified.' },
-  medium: {
-    label: 'Needs confirming',
-    tone: 'warn' as const,
-    hint: 'Found it, but the exact location is ambiguous.',
-  },
-  low: { label: 'Not identified', tone: 'flat' as const, hint: 'Nothing here pins a place.' },
+  high: { label: 'HIGH', tone: 'ok' as const },
+  medium: { label: 'MEDIUM', tone: 'warn' as const },
+  low: { label: 'LOW', tone: 'flat' as const },
 };
 
 export function ReelDetail({ shortcode }: { shortcode: string }) {
   const [item, setItem] = useState<SavedItem | null>(null);
   const [missing, setMissing] = useState(false);
   const [tab, setTab] = useState<'native' | 'english' | 'roman'>('english');
+  const [isStar, setIsStar] = useState(false);
+
+  const sync = useCallback(() => setIsStar(starred.has(shortcode)), [shortcode]);
 
   useEffect(() => {
     fetch('/api/reels', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
-        const found = (d.items ?? []).find(
-          (i: SavedItem) => i.shortcode === shortcode,
-        );
+        const found = (d.items ?? []).find((i: SavedItem) => i.shortcode === shortcode);
         found ? setItem(found) : setMissing(true);
       })
       .catch(() => setMissing(true));
-  }, [shortcode]);
+    sync();
+    window.addEventListener('reelbrain:store', sync);
+    return () => window.removeEventListener('reelbrain:store', sync);
+  }, [shortcode, sync]);
 
   if (missing) {
     return (
-      <main className="mx-auto max-w-3xl px-5 py-16 text-center">
-        <p className="font-medium">That reel isn&apos;t in the library.</p>
-        <Link href="/" className="mt-3 inline-block text-sm font-semibold text-primary">
-          ← Back to library
-        </Link>
+      <main className="mx-auto max-w-3xl px-5 py-16">
+        <Empty
+          title="Not in the library"
+          body="That reel isn't saved. Analyze it and it will appear here."
+        />
       </main>
     );
   }
@@ -57,64 +59,321 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
   const d = daysUntil(item.deadline_date);
   const cd = countdown(d, item.deadline_passed);
 
+  const facts: [string, string][] = (
+    [
+      ['Area', where],
+      ['Cuisine', p.cuisine],
+      ['Price band', p.price_band],
+      ['Veg / Non-veg', p.veg_status],
+      ['Phone number', p.contact],
+      ['Organisation', p.organisation],
+      ['Eligibility', p.eligibility],
+      ['Fee', p.fee],
+      ['Prize', p.prize],
+      ['Stipend', p.stipend],
+      ['Serves', p.servings],
+      ['Total time', p.total_time_minutes && `${p.total_time_minutes} min`],
+      ['Difficulty', p.difficulty],
+      ['Destination', p.destination],
+      ['Best season', p.best_season],
+      ['Topic', p.topic],
+    ] as [string, any][]
+  ).filter(([, v]) => v) as [string, string][];
+
+  const mapsQuery = encodeURIComponent(
+    [p.place_name ?? item.title, p.area, p.city].filter(Boolean).join(', '),
+  );
+
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8">
-      <Link href="/" className="text-sm font-semibold text-primary">
-        ← Library
-      </Link>
-
-      {/* Hero: portrait thumbnail beside the facts on desktop, stacked on phones. */}
-      <div className="mt-5 flex flex-col gap-6 sm:flex-row">
-        <div
-          className="w-full shrink-0 overflow-hidden rounded-2xl sm:w-44"
-          style={{ background: cat.tint }}
+    <main className="mx-auto w-full max-w-6xl px-5 pb-24 pt-6 sm:pb-12">
+      <div className="flex items-center justify-between gap-4">
+        <Link href="/reels" className="text-sm font-semibold text-primary">
+          ← Reels
+        </Link>
+        <button
+          onClick={() => setIsStar(starred.toggle(shortcode))}
+          className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+            isStar
+              ? 'border-primary/40 bg-primary-soft text-primary'
+              : 'border-line text-ink-muted hover:text-ink'
+          }`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/thumb/${shortcode}`}
-            alt=""
-            className="h-56 w-full object-cover sm:h-60"
-            onError={(e) => (e.currentTarget.style.visibility = 'hidden')}
-          />
-        </div>
+          {isStar ? '★ Saved' : '☆ Save'}
+        </button>
+      </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Pill tone="violet">{cat.one}</Pill>
-            {item.category !== 'other' && <Pill tone={conf.tone}>{conf.label}</Pill>}
-            {item.category === 'deadline' && <Pill tone={cd.tone}>{cd.text}</Pill>}
+      <h1 className="mt-4 text-[26px] font-bold tracking-[-0.02em] sm:text-[30px]">
+        {cat.one}
+      </h1>
+
+      {/* Facts left, hero + evidence right — the layout from the approved design.
+          Stacks on phones. */}
+      <div className="mt-6 flex flex-col gap-8 lg:flex-row">
+        <div className="min-w-0 flex-1 space-y-7">
+          <div>
+            <Eyebrow>{item.category === 'food_spot' ? 'Restaurant name' : 'Title'}</Eyebrow>
+            <h2 className="mt-1.5 text-[22px] font-bold leading-tight">
+              {item.title ?? 'Untitled'}
+            </h2>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {item.category !== 'other' && item.confidence && (
+                <Pill tone={conf.tone}>{conf.label} confidence</Pill>
+              )}
+              {item.category === 'deadline' && <Pill tone={cd.tone}>{cd.text}</Pill>}
+            </div>
           </div>
 
-          <h1 className="mt-3 text-[26px] font-bold leading-tight tracking-[-0.02em]">
-            {item.title ?? 'Untitled'}
-          </h1>
-          {where && <p className="mt-1 text-ink-muted">{where}</p>}
-          {p.organisation && <p className="mt-1 text-ink-muted">{p.organisation}</p>}
-          {p.summary && <p className="mt-3 text-sm leading-relaxed text-ink-muted">{p.summary}</p>}
-          {p.description && !p.summary && (
-            <p className="mt-3 text-sm leading-relaxed text-ink-muted">{p.description}</p>
+          {facts.length > 0 && (
+            <dl className="space-y-3">
+              {facts.map(([k, v]) => (
+                <div key={k}>
+                  <dt className="eyebrow">{k}</dt>
+                  <dd className="mt-0.5 text-[15px] capitalize">{v}</dd>
+                </div>
+              ))}
+            </dl>
           )}
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            {/* Directions only at high confidence: a medium result means the
-                city is unresolved, and navigating would send someone to the
-                wrong branch of a chain. */}
+          {item.category === 'deadline' && item.deadline_date && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Card className="p-4">
+                <Eyebrow>Apply before</Eyebrow>
+                <p className="tnum mt-1 text-lg font-semibold">{item.deadline_date}</p>
+                {p.date_confidence === 'inferred' && (
+                  <p className="mt-1 text-xs text-[#B45309]">
+                    Year inferred — worth double-checking
+                  </p>
+                )}
+              </Card>
+              {p.event_date && (
+                <Card className="p-4">
+                  <Eyebrow>Event date</Eyebrow>
+                  <p className="tnum mt-1 text-lg font-semibold">{p.event_date}</p>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {Array.isArray(p.dishes) && p.dishes.length > 0 && (
+            <Chips label="Dish list" values={p.dishes} />
+          )}
+          {Array.isArray(p.tags) && p.tags.length > 0 && (
+            <Chips label="Tags" values={p.tags.map((x: string) => `#${x}`)} />
+          )}
+
+          {Array.isArray(p.offers) && p.offers.length > 0 && (
+            <div>
+              <Eyebrow>Offers</Eyebrow>
+              <ul className="mt-2.5 space-y-2">
+                {p.offers.map((o: string) => (
+                  <li key={o} className="flex gap-2.5 text-[15px]">
+                    <span className="mt-[9px] size-1.5 shrink-0 rounded-full bg-[#16A34A]" />
+                    <span>{o}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(p.ingredients) && p.ingredients.length > 0 && (
+            <div>
+              <Eyebrow>Ingredients</Eyebrow>
+              <ul className="mt-2.5 space-y-2">
+                {p.ingredients.map((i: any, n: number) => (
+                  <li key={n} className="flex gap-3 text-[15px]">
+                    <span className="tnum w-24 shrink-0 font-semibold">
+                      {[i.quantity, i.unit].filter(Boolean).join(' ') || '—'}
+                    </span>
+                    <span className="text-ink-muted">
+                      {i.item}
+                      {i.notes && <span className="text-ink-faint"> — {i.notes}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(p.steps) && p.steps.length > 0 && (
+            <div>
+              <Eyebrow>Method</Eyebrow>
+              <ol className="mt-2.5 space-y-3.5">
+                {p.steps.map((s: any) => (
+                  <li key={s.order} className="flex gap-3 text-[15px]">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+                      {s.order}
+                    </span>
+                    <span>
+                      {s.instruction}
+                      {s.duration_minutes ? (
+                        <span className="ml-2 text-xs text-[#B45309]">
+                          {s.duration_minutes} min
+                        </span>
+                      ) : null}
+                      {s.tip && (
+                        <span className="mt-0.5 block text-xs text-[#15803D]">Tip: {s.tip}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {Array.isArray(p.products) && p.products.length > 0 && (
+            <div>
+              <Eyebrow>Products</Eyebrow>
+              <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {p.products.map((pr: any) => (
+                  <Card key={pr.name} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold">{pr.name}</p>
+                      <span className="tnum shrink-0 text-sm font-semibold text-[#15803D]">
+                        {pr.price_inr ? inr(pr.price_inr) : (pr.price_text ?? '—')}
+                      </span>
+                    </div>
+                    <dl className="mt-3 space-y-1 text-xs">
+                      {(pr.specs ?? []).map((sp: any) => (
+                        <div key={sp.label} className="flex justify-between gap-2">
+                          <dt className="text-ink-faint">{sp.label}</dt>
+                          <dd className="text-right">{sp.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {(pr.pros ?? []).map((x: string) => (
+                      <p key={x} className="mt-1 text-xs text-[#15803D]">+ {x}</p>
+                    ))}
+                    {(pr.cons ?? []).map((x: string) => (
+                      <p key={x} className="mt-1 text-xs text-[#B91C1C]">− {x}</p>
+                    ))}
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <a
+                        href={`https://www.amazon.in/s?k=${encodeURIComponent(pr.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-primary"
+                      >
+                        Amazon ↗
+                      </a>
+                      <a
+                        href={`https://www.flipkart.com/search?q=${encodeURIComponent(pr.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-primary"
+                      >
+                        Flipkart ↗
+                      </a>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-ink-faint">
+                Store buttons open a search for that model — we don&apos;t guess product URLs.
+              </p>
+            </div>
+          )}
+
+          {Array.isArray(p.key_points) && p.key_points.length > 0 && (
+            <div>
+              <Eyebrow>Key points</Eyebrow>
+              <ul className="mt-2.5 space-y-2">
+                {p.key_points.map((k: string, n: number) => (
+                  <li key={n} className="flex gap-2.5 text-[15px]">
+                    <span className="text-ink-faint">·</span>
+                    <span>{k}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(p.places) && p.places.length > 0 && (
+            <div>
+              <Eyebrow>Places</Eyebrow>
+              <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {p.places.map((pl: any) => (
+                  <Card key={pl.name} className="p-4">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-semibold">{pl.name}</p>
+                      <span className="shrink-0 text-xs text-ink-faint">{pl.place_type}</span>
+                    </div>
+                    {pl.description && (
+                      <p className="mt-1 text-sm text-ink-muted">{pl.description}</p>
+                    )}
+                  </Card>
+                ))}
+              </div>
+              <Link href="/trips" className="mt-3 inline-block text-sm font-semibold text-primary">
+                Plan a trip with these →
+              </Link>
+            </div>
+          )}
+
+          {t.native && (
+            <div>
+              <Eyebrow>Transcript</Eyebrow>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {(
+                  [
+                    ['native', (t.language ?? 'Original').toUpperCase()],
+                    ['english', 'English'],
+                    ['roman', 'Romanised'],
+                  ] as const
+                ).map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setTab(k)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                      tab === k
+                        ? 'bg-primary text-white'
+                        : 'border border-line text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <Card className="mt-2.5 p-4">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {t[tab] || <span className="text-ink-faint">Nothing for this view.</span>}
+                </p>
+              </Card>
+            </div>
+          )}
+
+          {p.reasoning && <p className="text-xs leading-relaxed text-ink-faint">{p.reasoning}</p>}
+        </div>
+
+        {/* Hero + evidence, sticky on desktop. */}
+        <aside className="w-full shrink-0 space-y-4 lg:sticky lg:top-[76px] lg:w-[360px] lg:self-start">
+          <div className="relative overflow-hidden rounded-2xl" style={{ background: cat.tint }}>
+            <div className="h-64">
+              <Thumb shortcode={shortcode} category={item.category} fill />
+            </div>
+            {item.confidence && item.category !== 'other' && (
+              <span className="absolute right-3 top-3">
+                <Pill tone={conf.tone}>{conf.label}</Pill>
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {/* Directions only at high confidence: medium means the city is
+                unresolved, and navigating would send someone to the wrong branch. */}
             {item.category === 'food_spot' && item.confidence === 'high' && (
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  [p.place_name, p.area, p.city].filter(Boolean).join(', '),
-                )}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#6D28D9]"
+                className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#6D28D9]"
               >
-                Get directions
+                Open in Google Maps
               </a>
             )}
             {item.category === 'deadline' && item.deadline_date && (
               <a
                 href={`/api/reels/${shortcode}/ics`}
-                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#6D28D9]"
+                className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#6D28D9]"
               >
                 Add to calendar
               </a>
@@ -125,7 +384,7 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
                 href={/^https?:\/\//i.test(l) ? l : `https://${l}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-primary hover:border-primary/40"
+                className="flex-1 rounded-xl border border-line px-4 py-2.5 text-center text-sm font-semibold text-primary hover:border-primary/40"
               >
                 Register ↗
               </a>
@@ -134,254 +393,33 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-ink-muted hover:text-ink"
+              className="flex-1 rounded-xl border border-line px-4 py-2.5 text-center text-sm font-semibold text-ink-muted hover:text-ink"
             >
               Original reel ↗
             </a>
           </div>
-        </div>
-      </div>
 
-      <div className="mt-10 space-y-8">
-        {item.category === 'deadline' && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* The point of the product: every claim is traceable. Receipts, not
+              debug output — so it sits beside the hero, not in an accordion. */}
+          {evidence.length > 0 && (
             <Card className="p-4">
-              <Eyebrow>Apply before</Eyebrow>
-              <p className="tnum mt-1 text-lg font-semibold">
-                {item.deadline_date ?? 'Not stated'}
-              </p>
-              {p.date_confidence === 'inferred' && (
-                <p className="mt-1 text-xs text-[var(--amber)]">
-                  Year inferred — worth double-checking
-                </p>
-              )}
-            </Card>
-            {p.event_date && (
-              <Card className="p-4">
-                <Eyebrow>Event date</Eyebrow>
-                <p className="tnum mt-1 text-lg font-semibold">{p.event_date}</p>
-              </Card>
-            )}
-          </div>
-        )}
-
-        <Facts p={p} />
-
-        {Array.isArray(p.dishes) && p.dishes.length > 0 && (
-          <Chips label="Dishes" values={p.dishes} />
-        )}
-        {Array.isArray(p.tags) && p.tags.length > 0 && (
-          <Chips label="Tags" values={p.tags.map((x: string) => `#${x}`)} />
-        )}
-
-        {Array.isArray(p.offers) && p.offers.length > 0 && (
-          <section>
-            <Eyebrow>Offers</Eyebrow>
-            <ul className="mt-3 space-y-1.5">
-              {p.offers.map((o: string) => (
-                <li key={o} className="flex gap-2.5 text-sm">
-                  <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-[#16A34A]" />
-                  <span>{o}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {Array.isArray(p.ingredients) && p.ingredients.length > 0 && (
-          <section>
-            <Eyebrow>Ingredients</Eyebrow>
-            <ul className="mt-3 space-y-1.5">
-              {p.ingredients.map((i: any, n: number) => (
-                <li key={n} className="flex gap-3 text-sm">
-                  <span className="tnum w-24 shrink-0 font-semibold">
-                    {[i.quantity, i.unit].filter(Boolean).join(' ') || '—'}
-                  </span>
-                  <span className="text-ink-muted">
-                    {i.item}
-                    {i.notes && <span className="text-ink-faint"> — {i.notes}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {Array.isArray(p.steps) && p.steps.length > 0 && (
-          <section>
-            <Eyebrow>Method</Eyebrow>
-            <ol className="mt-3 space-y-3">
-              {p.steps.map((s: any) => (
-                <li key={s.order} className="flex gap-3 text-sm">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary">
-                    {s.order}
-                  </span>
-                  <span>
-                    {s.instruction}
-                    {s.duration_minutes ? (
-                      <span className="ml-2 text-xs text-[var(--amber)]">
-                        {s.duration_minutes} min
-                      </span>
-                    ) : null}
-                    {s.tip && (
-                      <span className="mt-0.5 block text-xs text-[#16A34A]">
-                        Tip: {s.tip}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-
-        {Array.isArray(p.products) && p.products.length > 0 && (
-          <section>
-            <Eyebrow>Products</Eyebrow>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {p.products.map((pr: any) => (
-                <Card key={pr.name} className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold">{pr.name}</p>
-                    <span className="tnum shrink-0 text-sm font-semibold text-[#16A34A]">
-                      {pr.price_inr ? inr(pr.price_inr) : pr.price_text ?? '—'}
+              <Eyebrow>How we know</Eyebrow>
+              <div className="mt-3 space-y-2.5">
+                {evidence.slice(0, 7).map((e, n) => (
+                  <div key={n} className="text-[13px] leading-snug">
+                    <span className="mr-1.5 rounded bg-background px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-ink-muted">
+                      {SOURCE_LABEL[e.source] ?? e.source}
                     </span>
+                    <span className="text-ink-muted">{e.quote}</span>
                   </div>
-                  <dl className="mt-3 space-y-1 text-xs">
-                    {(pr.specs ?? []).map((s: any) => (
-                      <div key={s.label} className="flex justify-between gap-2">
-                        <dt className="text-ink-faint">{s.label}</dt>
-                        <dd className="text-right">{s.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  {(pr.pros ?? []).map((x: string) => (
-                    <p key={x} className="mt-1 text-xs text-[#16A34A]">+ {x}</p>
-                  ))}
-                  {(pr.cons ?? []).map((x: string) => (
-                    <p key={x} className="mt-1 text-xs text-[#DC2626]">− {x}</p>
-                  ))}
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {[
-                      ['Amazon', `https://www.amazon.in/s?k=${encodeURIComponent(pr.name)}`],
-                      ['Flipkart', `https://www.flipkart.com/search?q=${encodeURIComponent(pr.name)}`],
-                    ].map(([store, href]) => (
-                      <a
-                        key={store}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-primary"
-                      >
-                        {store} ↗
-                      </a>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-ink-faint">
-              Store buttons open a search for that model — we don&apos;t guess product URLs.
-            </p>
-          </section>
-        )}
-
-        {Array.isArray(p.key_points) && p.key_points.length > 0 && (
-          <section>
-            <Eyebrow>Key points</Eyebrow>
-            <ul className="mt-3 space-y-1.5">
-              {p.key_points.map((k: string, n: number) => (
-                <li key={n} className="flex gap-2.5 text-sm">
-                  <span className="text-ink-faint">·</span>
-                  <span>{k}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {Array.isArray(p.places) && p.places.length > 0 && (
-          <section>
-            <Eyebrow>Places</Eyebrow>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {p.places.map((pl: any) => (
-                <Card key={pl.name} className="p-4">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="font-semibold">{pl.name}</p>
-                    <span className="shrink-0 text-xs text-ink-faint">
-                      {pl.place_type}
-                    </span>
-                  </div>
-                  {pl.description && (
-                    <p className="mt-1 text-sm text-ink-muted">{pl.description}</p>
-                  )}
-                </Card>
-              ))}
-            </div>
-            <Link
-              href="/trips"
-              className="mt-3 inline-block text-sm font-semibold text-primary"
-            >
-              Plan a trip with these →
-            </Link>
-          </section>
-        )}
-
-        {/* The point of the product: every claim is traceable. A hero element,
-            not an accordion. */}
-        {evidence.length > 0 && (
-          <section>
-            <Eyebrow>How we know</Eyebrow>
-            <Card className="mt-3 divide-y divide-line">
-              {evidence.map((e, n) => (
-                <div key={n} className="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
-                  <span className="w-fit shrink-0 rounded-md bg-background px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
-                    {SOURCE_LABEL[e.source] ?? e.source}
-                  </span>
-                  <span className="min-w-0 text-sm">
-                    <span className="text-ink-faint">{e.field}: </span>
-                    &ldquo;{e.quote}&rdquo;
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="mt-3 border-t border-line pt-3">
+                <Pill tone="ok">From reel</Pill>
+              </div>
             </Card>
-            {p.reasoning && (
-              <p className="mt-2 text-xs text-ink-faint">{p.reasoning}</p>
-            )}
-          </section>
-        )}
-
-        {t.native && (
-          <section>
-            <Eyebrow>Transcript</Eyebrow>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(
-                [
-                  ['native', (t.language ?? 'Original').toUpperCase()],
-                  ['english', 'English'],
-                  ['roman', 'Romanised'],
-                ] as const
-              ).map(([k, label]) => (
-                <button
-                  key={k}
-                  onClick={() => setTab(k)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                    tab === k
-                      ? 'bg-primary text-white'
-                      : 'border border-line text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <Card className="mt-3 p-4">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                {t[tab] || <span className="text-ink-faint">Nothing for this view.</span>}
-              </p>
-            </Card>
-          </section>
-        )}
+          )}
+        </aside>
       </div>
     </main>
   );
@@ -389,9 +427,9 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
 
 function Chips({ label, values }: { label: string; values: string[] }) {
   return (
-    <section>
+    <div>
       <Eyebrow>{label}</Eyebrow>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-2.5 flex flex-wrap gap-2">
         {values.map((v) => (
           <span
             key={v}
@@ -401,37 +439,6 @@ function Chips({ label, values }: { label: string; values: string[] }) {
           </span>
         ))}
       </div>
-    </section>
-  );
-}
-
-function Facts({ p }: { p: Record<string, any> }) {
-  const facts = [
-    ['Cuisine', p.cuisine],
-    ['Price', p.price_band],
-    ['Veg', p.veg_status],
-    ['Phone', p.contact],
-    ['Serves', p.servings],
-    ['Total time', p.total_time_minutes && `${p.total_time_minutes} min`],
-    ['Difficulty', p.difficulty],
-    ['Eligibility', p.eligibility],
-    ['Fee', p.fee],
-    ['Prize', p.prize],
-    ['Stipend', p.stipend],
-    ['Location', p.location],
-    ['Best season', p.best_season],
-    ['Topic', p.topic],
-  ].filter(([, v]) => v) as [string, string][];
-
-  if (!facts.length) return null;
-  return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
-      {facts.map(([k, v]) => (
-        <div key={k}>
-          <dt className="eyebrow">{k}</dt>
-          <dd className="mt-1 text-sm capitalize">{v}</dd>
-        </div>
-      ))}
-    </dl>
+    </div>
   );
 }
