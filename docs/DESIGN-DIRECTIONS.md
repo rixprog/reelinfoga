@@ -90,19 +90,33 @@ Two ideas must be visible in the UI, not hidden in a details tab:
 Also: prices taken from the reel are tagged FROM REEL (green); prices the AI estimated
 are tagged ESTIMATE (grey). Never the same treatment.
 
-VISUAL BASELINE (unless the direction overrides it)
-Dark, near-black, calm and dense — a well-built utility, not a playful toy. Think
-Linear or Arc, not Duolingo. Thumbnails are portrait 9:16 and carry the colour; the
-chrome recedes so they can.
-  Background #09090B · surfaces #18181B · borders #27272A
-  Text #FAFAFA / #A1A1AA / #52525B
-  Semantic: green #34D399 · amber #FBBF24 · red #F87171 · sky #38BDF8
-  Category tints (thin edge or glyph only, never a filled card):
-    Food 🍽️ coral · Deadline ⏰ amber · Travel 🗺️ teal
-    Recipe 👨‍🍳 orange · Product 🛍️ violet · Other 📌 grey
-  Inter or Roboto. Tabular numerals for every price, countdown and distance.
-  12px card radius, 8px chips, 16px sheets, 4px spacing grid.
+VISUAL BASELINE — and it must NOT look like an AI-generated app mockup
+There is a recognisable "generated app" look and it comes from a specific set of
+habits. Avoid every one of them by name:
+  · EMOJI USED AS ICONS. The single biggest tell — no shipped app does this. Use thin
+    outline icons, 1.5px stroke, one consistent set.
+  · purple/violet gradients, glow, sparkles, "AI" motifs
+  · glassmorphism, frosted blur, heavy drop shadows
+  · a card that has a border AND a shadow AND a background tint — pick one
+  · a different bright colour for every category — it turns the UI into a parrot
+  · centred, symmetrical, evenly spaced layouts
+  · every piece of text the same size and weight
+
+Instead:
+  Type with violent hierarchy — 28px/600 screen titles, 15px/500 row titles,
+  13px/400 secondary, 11px/500 uppercase labels with wide letter-spacing.
+  Near-monochrome UI. Background #09090B · surfaces #18181B · hairline borders
+  #27272A · text #FAFAFA / #A1A1AA / #52525B.
+  ONE accent colour, plus amber #FBBF24 and red #F87171 for urgency only. Category is
+  signalled by a 2px left edge or a small monochrome line icon — never a filled block.
+  THE PHOTOGRAPHY CARRIES ALL THE COLOUR; the chrome stays neutral around it.
+  Dense and confident. Tight spacing inside a group, generous between groups.
+  Left-aligned. One elevation level. Hairline rules instead of card borders where
+  possible.
+  Tabular numerals for every price, countdown and distance.
   Motion fast and quiet, 150–200ms, no bounce.
+  Reference: Linear, Things 3, Raycast, Notion Calendar — dark, dense, restrained,
+  unmistakably designed by a person.
 ```
 
 ---
