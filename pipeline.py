@@ -1,12 +1,13 @@
 """
 End-to-end: paste a reel URL → get the food spot and where it is.
 
-    python pipeline.py https://www.instagram.com/reel/XXXX/
+    python pipeline.py <url>              human-readable
+    python pipeline.py <url> --json       JSONL events, for the web UI
     python pipeline.py --batch urls.txt
 
-Stages:
-    fetch (1 request)  →  frames + audio  →  detect lang  →  transcribe
-                       →  translate  →  rank comments  →  Claude  →  JSON
+In --json mode every stage transition is emitted as one line of JSON on stdout so
+the frontend can render live progress instead of a spinner. Stage ids match the
+`ProcessingStep` union in src/lib/types.ts.
 """
 
 from __future__ import annotations
@@ -24,19 +25,61 @@ import extract
 import media
 import transcribe as transcribe_mod
 
+# Mirrors ProcessingStep in src/lib/types.ts
+STAGES = [
+    ("downloading", "Fetching reel"),
+    ("extracting_audio", "Extracting frames and audio"),
+    ("transcribing", "Transcribing and translating"),
+    ("understanding", "Identifying the food spot"),
+    ("saving", "Saving"),
+]
+
+_JSON = False
+_EVENTS = sys.stdout   # the real stdout, reserved for JSON events
+
+
+def _enter_json_mode() -> None:
+    """
+    Reserve stdout for events and push everything else to stderr.
+
+    data.py, transcribe.py and friends all use bare print(), which lands on
+    stdout. Rebinding sys.stdout here is a one-line way to guarantee the event
+    stream stays pure JSONL without threading a logger through every module —
+    and a stray print that happened to be valid JSON would otherwise corrupt
+    the stream in a way that is very unpleasant to debug.
+    """
+    global _JSON, _EVENTS
+    _JSON = True
+    _EVENTS = sys.stdout
+    sys.stdout = sys.stderr
+
+
+def emit(event: str, **fields) -> None:
+    """One JSON object per line on stdout; ignored in human mode."""
+    if _JSON:
+        print(json.dumps({"event": event, **fields}, ensure_ascii=False,
+                         default=str), file=_EVENTS, flush=True)
+
+
+def log(msg: str) -> None:
+    """Human-readable chatter. In JSON mode sys.stdout is already stderr."""
+    print(msg, flush=True)
+
 
 def process(url: str, *, keyframes: int | None = None,
             with_owner_profile: bool = True) -> dict:
     keyframes = keyframes or config.KEYFRAMES
-
-    print(f"\n{'=' * 70}\n{url}\n{'=' * 70}")
+    log(f"\n{'=' * 70}\n{url}\n{'=' * 70}")
+    emit("start", url=url, stages=[{"id": s, "label": l} for s, l in STAGES])
 
     # 1 ── collect (single fetch, single download)
-    print("[1/5] fetching post…")
+    emit("stage", stage="downloading", status="processing")
+    log("[1/5] fetching post…")
     reel = data.fetch_reel(url, with_comments=True,
                            with_owner_profile=with_owner_profile)
+
     mode = "logged in" if reel.logged_in else "anonymous"
-    print(f"      @{reel.owner} · {reel.likes} likes · {mode}")
+    log(f"      @{reel.owner} · {reel.likes} likes · {mode}")
 
     signals = ["frames", "caption"]
     if reel.hashtags:
@@ -48,39 +91,50 @@ def process(url: str, *, keyframes: int | None = None,
         signals.append(f"geotag: {reel.location_name}{coords}")
     if reel.comments:
         signals.append(f"{len(reel.comments)} comments")
-    print(f"      signals: {' · '.join(signals)}")
-
+    log(f"      signals: {' · '.join(signals)}")
     if not reel.logged_in:
-        print("      (no geotag/comments — login-gated; city must come from "
-              "frames, caption or hashtags)")
+        log("      (no geotag/comments — login-gated; city must come from "
+            "frames, caption or hashtags)")
 
     if not reel.video_path:
         raise RuntimeError("No video downloaded — is the post a video?")
 
     work = config.DOWNLOADS / reel.shortcode
+    emit("stage", stage="downloading", status="completed",
+         detail=f"@{reel.owner} · {reel.likes} likes")
 
     # 2 ── keyframes (where the signboard lives)
-    print(f"[2/5] extracting {keyframes} keyframes…")
+    emit("stage", stage="extracting_audio", status="processing")
+    log(f"[2/5] extracting {keyframes} keyframes…")
     frames = media.extract_keyframes(reel.video_path, work / "frames",
                                      count=keyframes,
                                      duration=reel.video_duration)
-    print(f"      {len(frames)} frames")
+    log(f"      {len(frames)} frames")
+    emit("stage", stage="extracting_audio", status="completed",
+         detail=f"{len(frames)} keyframes")
 
     # 3 ── transcribe
-    print("[3/5] transcribing…")
+    emit("stage", stage="transcribing", status="processing")
+    log("[3/5] transcribing…")
     transcript = transcribe_mod.run(reel.video_path, work)
-    print(f"      native  : {transcript.native[:90] or '(no speech)'}")
-    print(f"      english : {transcript.english[:90] or '(none)'}")
+    log(f"      native  : {transcript.native[:90] or '(no speech)'}")
+    log(f"      english : {transcript.english[:90] or '(none)'}")
     if transcript.low_confidence:
-        print(f"      (low-confidence audio — flagged for the model to judge, "
-              f"not discarded)")
+        log("      (low-confidence audio — flagged for the model to judge, "
+            "not discarded)")
+    emit("stage", stage="transcribing", status="completed",
+         detail=f"language: {transcript.language or 'unknown'}")
 
     # 4 ── extract
-    print(f"[4/5] extracting food spot ({config.EXTRACTION_PROVIDER})…")
+    emit("stage", stage="understanding", status="processing")
+    log(f"[4/5] extracting food spot ({config.EXTRACTION_PROVIDER})…")
     spot = extract.extract_food_spot(reel, transcript, frames)
-    print(f"      {spot.input_tokens} in / {spot.output_tokens} out tokens")
+    log(f"      {spot.input_tokens} in / {spot.output_tokens} out tokens")
+    emit("stage", stage="understanding", status="completed",
+         detail=spot.payload.get("place_name") or "no place identified")
 
     # 5 ── persist
+    emit("stage", stage="saving", status="processing")
     result = {
         "url": url,
         "reel": reel.to_dict(),
@@ -89,6 +143,7 @@ def process(url: str, *, keyframes: int | None = None,
             "native": transcript.native,
             "english": transcript.english,
             "roman": transcript.roman,
+            "low_confidence": transcript.low_confidence,
         },
         "food_spot": spot.payload,
         "model": spot.model,
@@ -99,9 +154,12 @@ def process(url: str, *, keyframes: int | None = None,
     config.OUT.mkdir(parents=True, exist_ok=True)
     out_path = config.OUT / f"{reel.shortcode}.json"
     out_path.write_text(json.dumps(result, indent=2, ensure_ascii=False, default=str))
-    print(f"[5/5] saved → {out_path}")
+    log(f"[5/5] saved → {out_path}")
+    emit("stage", stage="saving", status="completed")
 
-    summarize(spot.payload, reel)
+    if not _JSON:
+        summarize(spot.payload, reel)
+    emit("done", result=result)
     return result
 
 
@@ -152,9 +210,13 @@ def main() -> int:
     ap.add_argument("url", nargs="?", help="Instagram reel URL")
     ap.add_argument("--batch", type=Path, help="file with one URL per line")
     ap.add_argument("--frames", type=int, default=None)
+    ap.add_argument("--json", action="store_true",
+                    help="emit JSONL progress events on stdout (for the web UI)")
     ap.add_argument("--no-profile", action="store_true",
                     help="skip the creator profile request (one fewer call)")
     args = ap.parse_args()
+    if args.json:
+        _enter_json_mode()
 
     urls = []
     if args.batch:
@@ -172,13 +234,14 @@ def main() -> int:
                     with_owner_profile=not args.no_profile)
         except Exception as e:
             failures += 1
+            emit("error", url=url, message=f"{type(e).__name__}: {e}")
             print(f"  FAILED {url}\n  {type(e).__name__}: {e}", file=sys.stderr)
 
         # Jittered pause between reels. Instagram throttles predictable cadences,
         # and a soft-ban mid-hackathon costs far more than the wait does.
         if i < len(urls) - 1:
             delay = random.uniform(20, 40)
-            print(f"\n… sleeping {delay:.0f}s before the next reel")
+            log(f"\n… sleeping {delay:.0f}s before the next reel")
             time.sleep(delay)
 
     if failures:
