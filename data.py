@@ -240,11 +240,22 @@ def fetch_owner_bio(username: str) -> dict | None:
     pipeline reaches for it only when a deadline reel says "link in bio" and no
     direct URL was found, which is exactly when it earns the request.
     """
+    import cache
+
+    cached, status = cache.get_profile(username)
+    if status == "hit":
+        print(f"[data] bio for @{username} from cache (no request)")
+        return cached
+    if status == "cooldown":
+        print(f"[data] bio for @{username} recently failed — backing off, "
+              f"not retrying yet")
+        return None
+
     L = get_loader()
     try:
         from instaloader import Profile
         p = Profile.from_username(L.context, username)
-        return {
+        bio = {
             "username": p.username,
             "full_name": p.full_name,
             "biography": p.biography or "",
@@ -252,7 +263,12 @@ def fetch_owner_bio(username: str) -> dict | None:
             "followers": p.followers,
             "is_verified": p.is_verified,
         }
+        cache.put_profile(username, bio)
+        return bio
     except Exception as e:
+        # Record the failure so the next reel from this creator backs off instead
+        # of firing another request into an active throttle.
+        cache.put_profile(username, None)
         print(f"[data] bio fetch failed for @{username} "
               f"({type(e).__name__}: {str(e)[:90]})")
         return None
