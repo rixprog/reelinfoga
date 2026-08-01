@@ -40,6 +40,10 @@ MAX_COMMENTS = int(os.getenv("MAX_COMMENTS", "100"))
 # open again. Set KEEP_MEDIA=1 only when debugging the extractor itself.
 KEEP_MEDIA = os.getenv("KEEP_MEDIA", "").lower() in ("1", "true", "yes")
 KEEP_THUMBNAIL = os.getenv("KEEP_THUMBNAIL", "1").lower() in ("1", "true", "yes")
+
+# Send a confirmation the moment a reel finishes processing. Off by default:
+# useful once notifications are wired up, noisy while you are batch-importing.
+NOTIFY_ON_SAVE = os.getenv("NOTIFY_ON_SAVE", "").lower() in ("1", "true", "yes")
 KEYFRAMES = int(os.getenv("KEYFRAMES", "6"))
 
 # Groq audio models

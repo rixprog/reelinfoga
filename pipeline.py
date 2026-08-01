@@ -203,6 +203,11 @@ def process(url: str, *, keyframes: int | None = None,
     if ics_path:
         log(f"      calendar file → {ics_path}")
 
+    if config.NOTIFY_ON_SAVE:
+        import notify
+        for r in notify.notify_saved(record):
+            log(f"      notify {r.channel}: {'OK' if r.ok else 'FAIL ' + r.detail}")
+
     # Everything downstream runs on the extracted JSON, so the video is dead
     # weight the moment extraction returns — ~18 MB per reel of it.
     if config.KEEP_MEDIA:
