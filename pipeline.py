@@ -70,8 +70,15 @@ def log(msg: str) -> None:
 
 
 def process(url: str, *, keyframes: int | None = None,
-            with_owner_profile: bool = True) -> dict:
+            with_owner_profile: bool | None = None) -> dict:
     keyframes = keyframes or config.KEYFRAMES
+    # The creator bio is reachable anonymously, but it costs a second request to
+    # api/v1/users/web_profile_info/ — the most aggressively throttled endpoint we
+    # touch, and the one that 429'd on every real run so far. Anonymous runs skip
+    # it by default: weak city inference is not worth spending the rate-limit
+    # budget that the reel fetch itself needs.
+    if with_owner_profile is None:
+        with_owner_profile = bool(config.IG_USERNAME)
     log(f"\n{'=' * 70}\n{url}\n{'=' * 70}")
     emit("start", url=url, stages=[{"id": s, "label": l} for s, l in STAGES])
 
@@ -146,6 +153,21 @@ def process(url: str, *, keyframes: int | None = None,
         spot.category = "food_spot"
         headline = spot.payload.get("place_name") or "no place identified"
     log(f"      {spot.input_tokens} in / {spot.output_tokens} out tokens")
+
+    # "Link in bio" is how a huge share of Indian opportunity reels actually
+    # distribute their registration URL. Spend the extra (throttled) profile
+    # request only here — when the reel is a deadline and we still have no link,
+    # which is exactly when the bio is the difference between actionable and not.
+    if spot.category == "deadline":
+        p = spot.payload
+        if p.get("link_in_bio") or not p.get("registration_links"):
+            log(f"      no direct link — checking @{reel.owner}'s bio…")
+            bio = data.fetch_owner_bio(reel.owner)
+            before = len(p.get("registration_links") or [])
+            spot.payload = verticals.resolve_bio_links(p, bio)
+            gained = len(spot.payload.get("registration_links") or []) - before
+            log(f"      bio contributed {gained} link(s)")
+
     emit("stage", stage="understanding", status="completed", detail=headline)
 
     # 6 ── persist, then delete the media we no longer need
@@ -296,8 +318,11 @@ def main() -> int:
     ap.add_argument("--frames", type=int, default=None)
     ap.add_argument("--json", action="store_true",
                     help="emit JSONL progress events on stdout (for the web UI)")
+    ap.add_argument("--profile", action="store_true",
+                    help="also fetch the creator bio (extra, heavily rate-limited "
+                         "request; on by default only when logged in)")
     ap.add_argument("--no-profile", action="store_true",
-                    help="skip the creator profile request (one fewer call)")
+                    help="never fetch the creator bio")
     args = ap.parse_args()
     if args.json:
         _enter_json_mode()
@@ -315,7 +340,8 @@ def main() -> int:
     for i, url in enumerate(urls):
         try:
             process(url, keyframes=args.frames,
-                    with_owner_profile=not args.no_profile)
+                    with_owner_profile=(False if args.no_profile
+                                        else True if args.profile else None))
         except Exception as e:
             failures += 1
             emit("error", url=url, message=f"{type(e).__name__}: {e}")

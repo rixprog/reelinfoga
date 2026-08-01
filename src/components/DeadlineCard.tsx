@@ -108,23 +108,38 @@ export function DeadlineCard({
             Add to calendar
           </a>
         )}
-        {op.registration_links.map((link) => (
-          <a
-            key={link}
-            href={href(link)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-zinc-700 px-4 py-2 text-sm
-                       text-zinc-200 hover:border-zinc-500"
-          >
-            Register ↗
-          </a>
-        ))}
+        {op.registration_links.map((link) => {
+          const fromBio = op.bio_links?.includes(link);
+          return (
+            <a
+              key={link}
+              href={href(link)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={link}
+              className="rounded-lg border border-zinc-700 px-4 py-2 text-sm
+                         text-zinc-200 hover:border-zinc-500"
+            >
+              {fromBio ? 'Link in bio ↗' : 'Register ↗'}
+            </a>
+          );
+        })}
       </div>
 
-      {op.registration_links.length === 0 && op.link_in_bio && (
+      {/* A bio link is weaker evidence than one shown in the reel: the profile
+          may have moved on to a newer opportunity since this was posted. Say so
+          rather than presenting it as if the reel contained it. */}
+      {(op.bio_links?.length ?? 0) > 0 && (
         <p className="mt-3 text-xs text-zinc-500">
-          No direct link in the reel — the creator says it&rsquo;s in their bio.
+          Registration link taken from the creator&rsquo;s profile bio — worth a
+          glance, since bios change over time.
+        </p>
+      )}
+
+      {op.registration_links.length === 0 && op.link_in_bio && (
+        <p className="mt-3 text-xs text-amber-500/80">
+          The reel says the link is in the bio, but we couldn&rsquo;t read the
+          profile (Instagram rate limit). Open the reel to find it.
         </p>
       )}
     </div>

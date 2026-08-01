@@ -13,6 +13,7 @@ model can actually satisfy, and adding a vertical stays a ~40-line change.
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -164,7 +165,7 @@ DEADLINE_SCHEMA = {
                     "source": {
                         "type": "string",
                         "enum": ["frame", "transcript", "caption", "hashtag",
-                                 "comment", "creator_reply", "tagged_user"],
+                                 "comment", "creator_reply", "tagged_user", "bio"],
                     },
                     "quote": {"type": "string"},
                 },
@@ -297,6 +298,76 @@ def extract_deadline(reel: ReelData, transcript, frames: list[Path],
     result.category = "deadline"
     result.payload = _sanity_check_dates(result.payload)
     return result
+
+
+# Bare domains count: bios are written as "unstop.com/x" or "linktr.ee/y" far more
+# often than as full https:// URLs.
+_URL_RE = re.compile(
+    r"\b((?:https?://)?(?:[\w-]+\.)+[a-z]{2,}(?:/[^\s,)\]]*)?)", re.IGNORECASE)
+
+# Domains that are almost never a registration target, so they only add noise.
+_LINK_NOISE = {
+    "instagram.com", "www.instagram.com", "facebook.com", "youtube.com",
+    "twitter.com", "x.com", "whatsapp.com", "gmail.com",
+}
+
+
+def links_from_bio(bio: dict) -> list[str]:
+    """
+    Pull candidate registration links out of a profile.
+
+    `external_url` is the literal "link in bio" slot and goes first. The biography
+    text is scanned too, because creators routinely paste a second URL there
+    (a form, an aggregator) that the single link slot cannot hold.
+    """
+    found: list[str] = []
+
+    if bio.get("external_url"):
+        found.append(bio["external_url"])
+
+    for match in _URL_RE.finditer(bio.get("biography") or ""):
+        found.append(match.group(1))
+
+    out: list[str] = []
+    for link in found:
+        cleaned = link.rstrip(".,);:")
+        host = re.sub(r"^https?://", "", cleaned, flags=re.I).split("/")[0].lower()
+        if host in _LINK_NOISE:
+            continue
+        if cleaned not in out:
+            out.append(cleaned)
+    return out
+
+
+def resolve_bio_links(payload: dict, bio: dict | None) -> dict:
+    """
+    Fold bio links into the extraction, keeping provenance honest.
+
+    They are appended rather than merged in silently: a link found on the profile
+    is weaker evidence than one shown in the reel itself — the bio may have moved
+    on to a newer opportunity since this reel was posted. Marking the source lets
+    the UI say where it came from instead of implying the reel contained it.
+    """
+    if not bio:
+        return payload
+
+    links = links_from_bio(bio)
+    if not links:
+        return payload
+
+    existing = payload.get("registration_links") or []
+    added = [l for l in links if l not in existing]
+    if not added:
+        return payload
+
+    payload["registration_links"] = existing + added
+    payload["bio_links"] = added
+    payload.setdefault("evidence", []).append({
+        "field": "registration_links",
+        "source": "bio",
+        "quote": f"@{bio.get('username')} bio: {', '.join(added)}",
+    })
+    return payload
 
 
 def _sanity_check_dates(payload: dict) -> dict:

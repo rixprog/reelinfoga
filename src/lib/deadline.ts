@@ -18,6 +18,8 @@ export interface Opportunity {
   prize: string | null;
   stipend: string | null;
   registration_links: string[];
+  /** Subset of registration_links that came from the profile, not the reel. */
+  bio_links?: string[];
   link_in_bio: boolean;
   contact: string | null;
   evidence: Evidence[];

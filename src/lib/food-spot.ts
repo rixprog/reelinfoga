@@ -10,7 +10,8 @@ export interface Evidence {
     | 'comment'
     | 'creator_reply'
     | 'geotag'
-    | 'tagged_user';
+    | 'tagged_user'
+    | 'bio';
   quote: string;
 }
 
@@ -101,6 +102,7 @@ export const SOURCE_LABEL: Record<Evidence['source'], string> = {
   creator_reply: 'creator reply',
   geotag: 'geotag',
   tagged_user: 'tagged account',
+  bio: 'creator bio',
 };
 
 export function mapsUrl(fs: FoodSpot): string {

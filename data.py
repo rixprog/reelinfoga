@@ -230,6 +230,34 @@ def _fetch_comments(post: Post, owner: str, limit: int) -> list[Comment]:
 # Public entrypoint
 # ─────────────────────────────────────────────────────────────────────────────
 
+def fetch_owner_bio(username: str) -> dict | None:
+    """
+    Creator bio + the profile's external URL.
+
+    Not login-gated — instaloader branches to api/v1/users/web_profile_info/ when
+    anonymous and that endpoint still serves the full node. It *is* heavily
+    throttled though, so this is deliberately not called for every reel; the
+    pipeline reaches for it only when a deadline reel says "link in bio" and no
+    direct URL was found, which is exactly when it earns the request.
+    """
+    L = get_loader()
+    try:
+        from instaloader import Profile
+        p = Profile.from_username(L.context, username)
+        return {
+            "username": p.username,
+            "full_name": p.full_name,
+            "biography": p.biography or "",
+            "external_url": p.external_url,
+            "followers": p.followers,
+            "is_verified": p.is_verified,
+        }
+    except Exception as e:
+        print(f"[data] bio fetch failed for @{username} "
+              f"({type(e).__name__}: {str(e)[:90]})")
+        return None
+
+
 def fetch_via_ytdlp(url: str, target_dir: Path) -> ReelData:
     """
     Fallback collector.
