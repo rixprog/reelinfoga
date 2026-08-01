@@ -2,39 +2,46 @@
 
 import { useState } from 'react';
 
-import { CATEGORY_META } from '@/lib/cards';
+import { categoryOf } from '@/lib/ui';
 
 /**
- * A reel's thumbnail, with a category-coloured fallback.
+ * A reel's thumbnail, served by /api/thumb (downloads/ lives outside public/).
  *
- * The image is served by /api/thumb because downloads/ lives outside public/ —
- * it is regenerable working data that gets pruned after every extraction.
- *
- * `onError` matters more than usual here: media is purged aggressively, so a
- * record can outlive its image. Falling back to the category glyph keeps the
- * row looking deliberate instead of showing a broken-image icon.
+ * `onError` is load-bearing rather than defensive: the backend purges media
+ * after extraction, so a record can outlive its image. A category-tinted tile
+ * reads as deliberate where a broken-image icon reads as a bug.
  */
 export function Thumb({
   shortcode,
   category,
   size = 56,
+  fill = false,
 }: {
   shortcode: string;
-  category: string;
+  category?: string;
+  /** Fixed square size in px. Ignored when `fill` is set. */
   size?: number;
+  /**
+   * Stretch to the parent instead of a fixed size. Required anywhere the tile
+   * sits in a responsive grid — a fixed px width silently overflows narrow
+   * viewports and drags the whole layout wider than the screen.
+   */
+  fill?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const meta = CATEGORY_META[category] ?? CATEGORY_META.other;
+  const { tint, one: label } = categoryOf(category);
+
+  const box = fill
+    ? { position: 'absolute' as const, inset: 0, width: '100%', height: '100%' }
+    : { width: size, height: size };
 
   if (failed) {
     return (
       <div
-        className="flex shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-lg"
-        style={{ width: size, height: size }}
-        aria-label={meta.label}
-      >
-        {meta.icon}
-      </div>
+        className={fill ? '' : 'shrink-0 rounded-xl'}
+        style={{ ...box, background: tint }}
+        aria-label={label}
+      />
     );
   }
 
@@ -47,8 +54,8 @@ export function Thumb({
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
-      className="shrink-0 rounded-lg object-cover"
-      style={{ width: size, height: size }}
+      className={fill ? 'object-cover' : 'shrink-0 rounded-xl object-cover'}
+      style={{ ...box, background: tint }}
     />
   );
 }

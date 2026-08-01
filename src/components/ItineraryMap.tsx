@@ -47,12 +47,12 @@ function pin(index: number, day: number, approximate: boolean) {
     className: '',
     html: `<div style="
       width:26px;height:26px;border-radius:50%;
-      background:${colour};color:#0a0a0a;
+      background:${colour};color:#18181B;
       display:flex;align-items:center;justify-content:center;
       font:600 12px/1 system-ui,sans-serif;
-      border:2px solid ${approximate ? '#a1a1aa' : '#0a0a0a'};
+      border:2px solid ${approximate ? '#a1a1aa' : '#ffffff'};
       ${approximate ? 'opacity:.6;border-style:dashed;' : ''}
-      box-shadow:0 1px 4px rgba(0,0,0,.5);
+      box-shadow:0 1px 4px rgba(0,0,0,.28);
     ">${index}</div>`,
     iconSize: [26, 26],
     iconAnchor: [13, 13],
@@ -87,7 +87,7 @@ export default function ItineraryMap({ stops }: { stops: RouteStop[] }) {
 
   if (!located.length) {
     return (
-      <div className="flex h-[420px] items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/40 text-sm text-zinc-500">
+      <div className="flex h-[420px] items-center justify-center rounded-2xl border border-line bg-surface text-sm text-ink-faint">
         Nothing to map yet.
       </div>
     );
@@ -97,12 +97,12 @@ export default function ItineraryMap({ stops }: { stops: RouteStop[] }) {
   let counter = 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-800">
+    <div className="overflow-hidden rounded-2xl border border-line [--map-h:340px] sm:[--map-h:460px]">
       <MapContainer
         center={centre}
         zoom={11}
         scrollWheelZoom
-        style={{ height: 460, width: '100%', background: '#18181b' }}
+        style={{ height: 'var(--map-h, 460px)', width: '100%', background: '#F4F4F5' }}
       >
         <TileLayer
           // Standard OSM tiles — free, no key. Attribution is required by the

@@ -9,7 +9,7 @@ import type { RouteStop } from './ItineraryMap';
 const ItineraryMap = dynamic(() => import('./ItineraryMap'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[460px] items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/40 text-sm text-zinc-600">
+    <div className="flex h-[460px] items-center justify-center rounded-2xl border border-line bg-surface text-sm text-ink-faint">
       Loading map…
     </div>
   ),
@@ -174,13 +174,8 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
   const p = full?.plan;
 
   return (
-    <section className="mt-14 border-t border-zinc-900 pt-10">
-      <h2 className="text-lg font-semibold">Trip planner</h2>
-      <p className="mt-1 text-sm text-zinc-500">
-        A rough plan first, then tell us who&rsquo;s going and we&rsquo;ll cost it out.
-      </p>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+    <section>
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={selected}
           onChange={(e) => {
@@ -188,7 +183,7 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
             setRough(null);
             setFull(null);
           }}
-          className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
+          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
         >
           {destinations.map((d) => (
             <option key={d.name} value={d.name}>
@@ -199,49 +194,49 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
         <button
           onClick={getRough}
           disabled={stage !== 'idle'}
-          className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900
-                     hover:bg-white disabled:bg-zinc-800 disabled:text-zinc-500"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white
+                     hover:bg-[#6D28D9] disabled:bg-[#E4E4E7] disabled:text-ink-faint"
         >
           {stage === 'rough' ? 'Thinking…' : 'Rough plan'}
         </button>
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <p className="mt-4 rounded-lg bg-[#FEE2E2] px-4 py-3 text-sm text-[#DC2626]">
           {error}
         </p>
       )}
 
       {rough && (
-        <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+        <div className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <h3 className="text-xl font-semibold">{rough.destination}</h3>
-            <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">
+            <span className="rounded-full bg-background px-3 py-1 text-xs text-ink">
               ~{inr(rough.rough_cost.per_person_low_inr)}–
               {inr(rough.rough_cost.per_person_high_inr)} per person
             </span>
           </div>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-400">{rough.overview}</p>
+          <p className="mt-2 text-sm leading-relaxed text-ink-muted">{rough.overview}</p>
 
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-faint">
             <span>Suggested: {rough.suggested_days} days</span>
             {rough.best_season && <span>Season: {rough.best_season}</span>}
             {rough.nearest_transport_hub && (
               <span>Nearest hub: {rough.nearest_transport_hub}</span>
             )}
           </div>
-          <p className="mt-2 text-xs text-zinc-600">{rough.rough_cost.note}</p>
+          <p className="mt-2 text-xs text-ink-faint">{rough.rough_cost.note}</p>
 
           {rough.from_reel_places.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className="text-xs uppercase tracking-wide text-ink-faint">
                 From your reels ({rough.from_reel_places.length})
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {rough.from_reel_places.map((n) => (
                   <span
                     key={n}
-                    className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400 ring-1 ring-emerald-500/30"
+                    className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-[#16A34A] "
                   >
                     {n}
                   </span>
@@ -252,7 +247,7 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
 
           {rough.suggested_places.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className="text-xs uppercase tracking-wide text-ink-faint">
                 {rough.reel_covers_specific_places
                   ? 'You could also add'
                   : 'Your reel only named the destination — here’s what we suggest'}
@@ -260,7 +255,7 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
               <ul className="mt-2 space-y-2">
                 {rough.suggested_places.map((sp) => (
                   <li key={sp.name}>
-                    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-background/50 p-3">
                       <input
                         type="checkbox"
                         checked={chosen.has(sp.name)}
@@ -273,13 +268,13 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
                       />
                       <span className="min-w-0">
                         <span className="text-sm font-medium">{sp.name}</span>
-                        <span className="ml-2 text-xs text-zinc-500">
+                        <span className="ml-2 text-xs text-ink-faint">
                           {sp.place_type}
                           {sp.typical_entry_fee_inr
                             ? ` · ~${inr(sp.typical_entry_fee_inr)}`
                             : ''}
                         </span>
-                        <p className="mt-0.5 text-xs text-zinc-500">{sp.why}</p>
+                        <p className="mt-0.5 text-xs text-ink-faint">{sp.why}</p>
                       </span>
                     </label>
                   </li>
@@ -290,10 +285,10 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
 
           {rough.reel_stated_prices.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className="text-xs uppercase tracking-wide text-ink-faint">
                 Prices stated in your reels
               </p>
-              <ul className="mt-1 text-xs text-zinc-400">
+              <ul className="mt-1 text-xs text-ink-muted">
                 {rough.reel_stated_prices.map((s) => (
                   <li key={s}>· {s}</li>
                 ))}
@@ -301,9 +296,9 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
             </div>
           )}
 
-          <div className="mt-6 border-t border-zinc-800 pt-5">
+          <div className="mt-6 border-t border-line pt-5">
             <p className="text-sm font-medium">Now tell us about the trip</p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Num label="Days" value={days} onChange={setDays} min={1} max={7} />
               <Num
                 label="Travellers"
@@ -348,14 +343,14 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
             <button
               onClick={buildPlan}
               disabled={stage !== 'idle'}
-              className="mt-5 rounded-lg bg-zinc-100 px-5 py-2.5 text-sm font-medium
-                         text-zinc-900 hover:bg-white disabled:bg-zinc-800
-                         disabled:text-zinc-500"
+              className="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold
+                         text-white hover:bg-[#6D28D9] disabled:bg-[#E4E4E7]
+                         disabled:text-ink-faint"
             >
               {stage === 'planning' ? 'Planning and costing…' : 'Plan my trip'}
             </button>
             {stage === 'planning' && (
-              <p className="mt-2 text-xs text-zinc-600">
+              <p className="mt-2 text-xs text-ink-faint">
                 Geocoding each place against OpenStreetMap (1/sec, as their policy
                 requires), then routing and costing.
               </p>
@@ -368,11 +363,11 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
         <div className="mt-6 space-y-4">
           <ItineraryMap stops={full.route} />
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <h3 className="text-xl font-semibold">{p.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">{p.overview}</p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">{p.overview}</p>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Stat label="Total" value={inr(p.total_inr)} />
               <Stat label={`Per person (${travellers})`} value={inr(p.per_person_inr)} />
               {p.within_budget !== null && (
@@ -385,7 +380,7 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
             </div>
 
             {p.budget_advice && (
-              <p className="mt-3 text-sm text-zinc-400">{p.budget_advice}</p>
+              <p className="mt-3 text-sm text-ink-muted">{p.budget_advice}</p>
             )}
 
             {p.days.map((d) => (
@@ -399,22 +394,22 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
                     Day {d.day} — {d.theme}
                   </p>
                 </div>
-                <ul className="mt-3 space-y-3 border-l border-zinc-800 pl-4">
+                <ul className="mt-3 space-y-3 border-l border-line pl-4">
                   {d.items.map((it, i) => (
                     <li key={i} className="flex gap-3 text-sm">
-                      <span className="w-12 shrink-0 tabular-nums text-zinc-500">
+                      <span className="w-12 shrink-0 tabular-nums text-ink-faint">
                         {it.time}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex justify-between gap-3">
-                          <span className="text-zinc-100">{it.stop_name}</span>
+                          <span className="text-ink">{it.stop_name}</span>
                           {it.cost_inr ? (
-                            <span className="shrink-0 tabular-nums text-xs text-zinc-500">
+                            <span className="shrink-0 tabular-nums text-xs text-ink-faint">
                               {inr(it.cost_inr)}
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 text-zinc-500">{it.note}</p>
+                        <p className="mt-0.5 text-ink-faint">{it.note}</p>
                       </div>
                     </li>
                   ))}
@@ -425,28 +420,28 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
             {/* Provenance again: a price the reel stated is data; ours is an
                 estimate. Money is where a mislabelled claim actually costs
                 the user something. */}
-            <div className="mt-7 border-t border-zinc-800 pt-4">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+            <div className="mt-7 border-t border-line pt-4">
+              <p className="text-xs uppercase tracking-wide text-ink-faint">
                 Cost breakdown
               </p>
               <table className="mt-3 w-full text-sm">
                 <tbody>
                   {p.costs.map((c, i) => (
-                    <tr key={i} className="border-b border-zinc-900 last:border-0">
+                    <tr key={i} className="border-b border-line last:border-0">
                       <td className="py-2 pr-2 align-top">
                         <span
                           className={`mr-2 rounded px-1.5 py-0.5 text-[10px] ${
                             c.source === 'reel'
-                              ? 'bg-emerald-500/15 text-emerald-400'
-                              : 'bg-zinc-800 text-zinc-500'
+                              ? 'bg-emerald-500/15 text-[#16A34A]'
+                              : 'bg-background text-ink-faint'
                           }`}
                         >
                           {c.source === 'reel' ? 'FROM REEL' : 'ESTIMATE'}
                         </span>
-                        <span className="text-zinc-200">{c.label}</span>
-                        <p className="mt-0.5 text-xs text-zinc-600">{c.basis}</p>
+                        <span className="text-ink">{c.label}</span>
+                        <p className="mt-0.5 text-xs text-ink-faint">{c.basis}</p>
                       </td>
-                      <td className="py-2 text-right align-top tabular-nums text-zinc-200">
+                      <td className="py-2 text-right align-top tabular-nums text-ink">
                         {inr(c.amount_inr)}
                       </td>
                     </tr>
@@ -463,12 +458,12 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
 
             {p.assumptions.length > 0 && (
               <div className="mt-5">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">
+                <p className="text-xs uppercase tracking-wide text-ink-faint">
                   What these numbers assume
                 </p>
                 <ul className="mt-2 space-y-1">
                   {p.assumptions.map((a, i) => (
-                    <li key={i} className="text-xs text-zinc-500">
+                    <li key={i} className="text-xs text-ink-faint">
                       · {a}
                     </li>
                   ))}
@@ -478,10 +473,10 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
 
             {p.tips.length > 0 && (
               <div className="mt-5">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Tips</p>
+                <p className="text-xs uppercase tracking-wide text-ink-faint">Tips</p>
                 <ul className="mt-2 space-y-1">
                   {p.tips.map((t, i) => (
-                    <li key={i} className="text-sm text-zinc-400">
+                    <li key={i} className="text-sm text-ink-muted">
                       · {t}
                     </li>
                   ))}
@@ -490,7 +485,7 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
             )}
 
             {full.unlocated.length > 0 && (
-              <p className="mt-5 text-xs text-amber-500/80">
+              <p className="mt-5 text-xs text-[var(--amber)]">
                 Not on the map (not found in OpenStreetMap):{' '}
                 {full.unlocated.join(', ')}
               </p>
@@ -512,10 +507,10 @@ function Stat({
   tone?: 'good' | 'bad';
 }) {
   const colour =
-    tone === 'good' ? 'text-emerald-400' : tone === 'bad' ? 'text-red-400' : '';
+    tone === 'good' ? 'text-[#16A34A]' : tone === 'bad' ? 'text-[#DC2626]' : '';
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+    <div className="rounded-xl border border-line bg-background p-4">
+      <p className="text-xs uppercase tracking-wide text-ink-faint">{label}</p>
       <p className={`mt-1 text-xl font-semibold tabular-nums ${colour}`}>{value}</p>
     </div>
   );
@@ -536,7 +531,7 @@ function Num({
 }) {
   return (
     <label className="block">
-      <span className="text-xs uppercase tracking-wide text-zinc-500">{label}</span>
+      <span className="text-xs uppercase tracking-wide text-ink-faint">{label}</span>
       <input
         type="number"
         min={min}
@@ -545,7 +540,7 @@ function Num({
         onChange={(e) =>
           onChange(Math.min(Math.max(Number(e.target.value) || min, min), max))
         }
-        className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm"
       />
     </label>
   );
@@ -566,7 +561,7 @@ function Text({
 }) {
   return (
     <label className="block">
-      <span className="text-xs uppercase tracking-wide text-zinc-500">{label}</span>
+      <span className="text-xs uppercase tracking-wide text-ink-faint">{label}</span>
       <input
         inputMode={numeric ? 'numeric' : undefined}
         value={value}
@@ -574,8 +569,8 @@ function Text({
         onChange={(e) =>
           onChange(numeric ? e.target.value.replace(/[^\d]/g, '') : e.target.value)
         }
-        className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2
-                   text-sm placeholder:text-zinc-600"
+        className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2
+                   text-sm placeholder:text-ink-faint"
       />
     </label>
   );
@@ -594,11 +589,11 @@ function Choice({
 }) {
   return (
     <label className="block">
-      <span className="text-xs uppercase tracking-wide text-zinc-500">{label}</span>
+      <span className="text-xs uppercase tracking-wide text-ink-faint">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm capitalize"
+        className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm capitalize"
       >
         {options.map((o) => (
           <option key={o} value={o}>
