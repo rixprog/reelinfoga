@@ -32,6 +32,18 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from email.message import EmailMessage
+from pathlib import Path
+
+# Load .env here rather than relying on a caller having imported config first.
+# notify is used from the pipeline, from reminders.py and standalone from the
+# API routes; without this it silently reports "not configured" in whichever
+# path happens not to touch config.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:  # dotenv is optional; real env vars still work
+    pass
 
 TIMEOUT = 15
 
@@ -49,6 +61,47 @@ class Result:
 
 def telegram_enabled() -> bool:
     return bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID"))
+
+
+def send_telegram_photo(photo_path: str, caption: str) -> Result:
+    """
+    A reminder with its poster attached.
+
+    Telegram cannot fetch a localhost path, so the file is uploaded as
+    multipart. Falls back to a plain text message if the image is missing or
+    rejected — a reminder that arrives without its picture is still a reminder,
+    but one that fails to send at all is a missed deadline.
+    """
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
+    if not (token and chat_id):
+        return Result("telegram", False, "not configured")
+
+    path = Path(photo_path) if photo_path else None
+    if not path or not path.is_file():
+        return send_telegram(caption)
+
+    try:
+        import requests
+        with open(path, "rb") as fh:
+            r = requests.post(
+                f"https://api.telegram.org/bot{token}/sendPhoto",
+                data={
+                    "chat_id": chat_id,
+                    # Telegram caps photo captions at 1024 characters.
+                    "caption": caption[:1024],
+                    "parse_mode": "HTML",
+                },
+                files={"photo": (path.name, fh, "image/jpeg")},
+                timeout=TIMEOUT,
+            )
+        if r.status_code == 200:
+            return Result("telegram", True, "photo sent")
+        # A rejected image should not cost the user the reminder itself.
+        return send_telegram(caption)
+    except Exception as e:
+        print(f"[notify] photo upload failed ({type(e).__name__}) — sending text")
+        return send_telegram(caption)
 
 
 def send_telegram(text: str) -> Result:
@@ -266,8 +319,26 @@ def format_saved(record: dict) -> tuple[str, str]:
 
 
 def notify_saved(record: dict, dry_run: bool = False) -> list[Result]:
+    """
+    Sent when a reel finishes processing.
+
+    Goes out with the thumbnail attached: the user shared this reel a minute ago
+    and recognises the picture instantly, where a title alone often means
+    nothing out of context.
+    """
     subject, text = format_saved(record)
-    return send(subject, text, dry_run=dry_run)
+
+    if dry_run or not enabled_channels():
+        return send(subject, text, dry_run=dry_run)
+
+    results: list[Result] = []
+    if telegram_enabled():
+        results.append(send_telegram_photo(record.get("thumbnail"), text))
+    if email_enabled():
+        results.append(send_email(subject, _strip_html(text)))
+    if whatsapp_enabled():
+        results.append(send_whatsapp(f"*{subject}*\n\n{_strip_html(text)}"))
+    return results
 
 
 def _esc(s: str) -> str:

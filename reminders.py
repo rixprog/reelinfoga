@@ -156,6 +156,92 @@ def format_message(items: list[dict]) -> tuple[str, str, str]:
     return subject, "\n".join(lines).rstrip(), "".join(html)
 
 
+def _esc(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def format_one(item: dict) -> str:
+    """
+    Everything needed to act, in one caption.
+
+    A reminder that only says "closes in 2 days" sends the user back into the app
+    to remember what it was, what it costs and where to apply. All of that is
+    already extracted, so all of it goes in the message.
+    """
+    p = item.get("payload") or {}
+    days = item["_days"]
+    when = ("closes TODAY" if days == 0
+            else "closes tomorrow" if days == 1
+            else f"{days} days left")
+
+    lines = [f"<b>{_esc(item.get('title') or 'Saved opportunity')}</b>"]
+
+    sub = " · ".join(
+        x for x in (item.get("organisation"), p.get("opportunity_type")) if x
+    )
+    if sub:
+        lines.append(_esc(sub))
+
+    lines.append("")
+    lines.append(f"⏰ <b>{when}</b> — apply by {item.get('deadline_date')}")
+    if p.get("event_date"):
+        lines.append(f"📅 Event: {p['event_date']}")
+
+    for label, key in (
+        ("Eligibility", "eligibility"),
+        ("Fee", "fee"),
+        ("Prize", "prize"),
+        ("Stipend", "stipend"),
+        ("Location", "location"),
+    ):
+        if p.get(key):
+            lines.append(f"{label}: {_esc(str(p[key]))}")
+
+    links = item.get("registration_links") or []
+    if links:
+        lines.append("")
+        lines.append(f"👉 Apply: {links[0]}")
+    elif item.get("link_in_bio"):
+        lines.append("")
+        lines.append(f"👉 Link is in @{item.get('owner')}'s Instagram bio")
+
+    if item.get("url"):
+        lines.append(f"Reel: {item['url']}")
+
+    return "\n".join(lines)
+
+
+def send_rich(due: list[dict], dry_run: bool) -> list:
+    """
+    One message per deadline, each carrying its own thumbnail.
+
+    Deadlines are rare and individually actionable, so a message each reads
+    better than a digest — you see the poster and recognise it instantly. Past a
+    handful that becomes spam, so a big batch falls back to one summary.
+    """
+    if dry_run or not notify.enabled_channels():
+        subject, text, _ = format_message(due)
+        return notify.send(subject, text, dry_run=dry_run)
+
+    if len(due) > 4:
+        subject, text, html = format_message(due)
+        return notify.send(subject, text, html)
+
+    results = []
+    for item in due:
+        caption = format_one(item)
+        if notify.telegram_enabled():
+            results.append(notify.send_telegram_photo(item.get("thumbnail"), caption))
+        if notify.email_enabled():
+            results.append(
+                notify.send_email(
+                    f"⏰ {item['_label'].capitalize()}: {item.get('title')}",
+                    notify._strip_html(caption),
+                )
+            )
+    return results
+
+
 def run(dry_run: bool = False, digest: bool = False) -> int:
     items = store.all_items()
     sent = _load_sent()
@@ -166,8 +252,7 @@ def run(dry_run: bool = False, digest: bool = False) -> int:
         print(f"Nothing due. ({total} deadline item(s) tracked)")
         return 0
 
-    subject, text, html = format_message(due)
-    results = notify.send(subject, text, html, dry_run=dry_run)
+    results = send_rich(due, dry_run)
 
     for r in results:
         print(f"  {r.channel:<10} {'OK' if r.ok else 'FAIL'}  {r.detail}")
