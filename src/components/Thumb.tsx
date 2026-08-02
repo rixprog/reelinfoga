@@ -28,7 +28,12 @@ export function Thumb({
    */
   fill?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
+  // Remember *which* shortcode failed rather than a bare boolean. A plain flag
+  // latches: the analyze screen mounts this before the shortcode is known, the
+  // empty request 404s, and the same instance then renders the fallback forever
+  // even once the real shortcode arrives.
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  const failed = failedFor === shortcode;
   const { tint, one: label } = categoryOf(category);
 
   const box = fill
@@ -53,7 +58,7 @@ export function Thumb({
       src={`/api/thumb/${shortcode}`}
       alt=""
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => setFailedFor(shortcode)}
       className={fill ? 'object-cover' : 'shrink-0 rounded-xl object-cover'}
       style={{ ...box, background: tint }}
     />

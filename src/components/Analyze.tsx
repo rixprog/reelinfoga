@@ -9,6 +9,11 @@ import { Card, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import { categoryOf, countdown, daysUntil } from '@/lib/ui';
 
+/** Pull the shortcode out of a reel/post/tv URL. Null when it isn't one yet. */
+function shortcodeFromUrl(u: string): string | null {
+  return u.match(/instagram\.com\/(?:reel|reels|p|tv)\/([\w-]+)/)?.[1] ?? null;
+}
+
 interface Stage {
   id: string;
   label: string;
@@ -451,8 +456,19 @@ export function Analyze() {
               {(fetched || result) && (
                 <div className="mt-8 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row gap-6 items-start">
                   <div className="relative w-full sm:w-[200px] shrink-0 overflow-hidden rounded-2xl bg-zinc-900 shadow-md">
-                    <div className="aspect-[9/16]">
-                      <Thumb shortcode={result?.reel.shortcode ?? ''} category={result?.category} fill />
+                    <div className="relative aspect-[9/16]">
+                      {/* The download stage finishes before `result` exists, so
+                          fall back to the shortcode in the pasted URL — asking
+                          for /api/thumb/ with no shortcode just 404s. */}
+                      {(result?.reel.shortcode ?? shortcodeFromUrl(url)) ? (
+                        <Thumb
+                          shortcode={result?.reel.shortcode ?? shortcodeFromUrl(url)!}
+                          category={result?.category}
+                          fill
+                        />
+                      ) : (
+                        <div className="absolute inset-0 animate-pulse bg-zinc-800" />
+                      )}
                     </div>
                     {result?.reel.video_duration ? (
                       <span className="absolute right-2 top-2 rounded-md bg-black/75 backdrop-blur-sm px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">
