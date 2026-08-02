@@ -38,3 +38,4 @@ next-env.d.ts
 
 # processed output (regenerable from the source reels)
 out/
+propmt.txt

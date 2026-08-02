@@ -29,48 +29,48 @@ export function Header() {
   const path = usePathname();
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex h-[60px] w-full max-w-[1400px] items-center gap-8 px-5">
+      <header className="sticky top-0 z-40 border-b border-purple-100/60 bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex h-[60px] w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2.5">
-            <Logo />
-            <span className="text-[15px] font-semibold tracking-tight">ReelBrain</span>
+            <span className="grid size-8 place-items-center rounded-xl bg-violet-600 text-white shadow-md shadow-violet-500/20">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+              </svg>
+            </span>
+            <span className="text-base font-bold tracking-tight text-zinc-900">ReelBrain</span>
           </Link>
 
-          <nav className="ml-auto hidden items-center gap-1 sm:flex">
+          <nav className="hidden items-center gap-1 sm:flex">
             {NAV.map((n) => {
               const active = n.match(path);
               return (
                 <Link
                   key={n.href}
                   href={n.href}
-                  className={`flex w-[62px] flex-col items-center gap-1 rounded-xl py-1.5
-                              transition ${
-                                active
-                                  ? 'bg-primary-soft'
-                                  : 'hover:bg-background'
-                              }`}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                    active
+                      ? 'bg-violet-100/90 text-violet-700 shadow-sm'
+                      : 'text-zinc-600 hover:bg-violet-50 hover:text-zinc-900'
+                  }`}
                 >
-                  <TabIcon name={n.label} active={active} />
-                  <span
-                    className={`text-[11px] leading-none ${
-                      active ? 'font-semibold text-primary' : 'text-ink-muted'
-                    }`}
-                  >
-                    {n.label}
-                  </span>
+                  {n.label}
                 </Link>
               );
             })}
             <Link
               href="/settings"
               aria-label="Settings"
-              className={`ml-1 grid size-9 place-items-center rounded-xl transition ${
-                path.startsWith('/settings') ? 'bg-primary-soft' : 'hover:bg-background'
+              className={`ml-2 grid size-8 place-items-center rounded-full transition ${
+                path.startsWith('/settings')
+                  ? 'bg-violet-100 text-violet-700'
+                  : 'text-zinc-500 hover:bg-violet-50 hover:text-zinc-900'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke={path.startsWith('/settings') ? 'var(--primary)' : 'var(--ink-faint)'}
-                   strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor"
+                   strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3.1" />
                 <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.7a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.3 9v0a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1Z" />
               </svg>
@@ -157,9 +157,9 @@ export function Page({
 }) {
   return (
     <main
-      className={`mx-auto w-full px-5 pb-24 sm:pb-12 ${
-        wide ? 'max-w-[1400px]' : 'max-w-5xl'
-      } ${bare ? '' : 'py-8 sm:py-10'}`}
+      className={`mx-auto w-full pb-24 sm:pb-12 ${
+        wide ? 'max-w-7xl px-4 sm:px-6 lg:px-8' : 'max-w-5xl px-5'
+      } ${bare ? 'py-4 sm:py-6' : 'py-8 sm:py-10'}`}
     >
       {title && (
         <div className="flex flex-wrap items-end justify-between gap-4">
