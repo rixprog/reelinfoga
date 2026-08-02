@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { RouteStop } from './ItineraryMap';
 
@@ -75,7 +75,18 @@ interface FullPlan {
   unlocated: string[];
 }
 
-export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
+export function TripPlanner({
+  refreshKey,
+  destination,
+}: {
+  refreshKey: string | null;
+  /**
+   * Fixed destination, set when you arrive from a travel reel. The reel has
+   * already told us where you mean, so re-asking with a dropdown is a question
+   * we know the answer to.
+   */
+  destination?: string;
+}) {
   const [destinations, setDestinations] = useState<{ name: string; stops: number }[]>([]);
   const [selected, setSelected] = useState('');
   const [rough, setRough] = useState<Rough | null>(null);
@@ -97,15 +108,29 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
       const r = await fetch('/api/itinerary', { cache: 'no-store' });
       const d = await r.json();
       setDestinations(d.destinations ?? []);
-      setSelected((cur) => cur || d.destinations?.[0]?.name || '');
+      setSelected((cur) => destination || cur || d.destinations?.[0]?.name || '');
     } catch {
       /* nothing saved yet is a normal state */
     }
-  }, []);
+  }, [destination]);
 
   useEffect(() => {
     load();
   }, [load, refreshKey]);
+
+  // Coming from a reel: pull the summary straight away so the user lands on
+  // the trip inputs rather than a button that fetches what we already know to
+  // ask for. Runs once per destination, never for the dropdown flow.
+  const fetched = useRef<string | null>(null);
+  useEffect(() => {
+    if (!destination || selected !== destination) return;
+    if (fetched.current === destination) return;
+    fetched.current = destination;
+    getRough();
+    // getRough is stable for a given `selected`; re-running on its identity
+    // would refetch on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destination, selected]);
 
   async function getRough() {
     if (!selected) return;
@@ -175,31 +200,40 @@ export function TripPlanner({ refreshKey }: { refreshKey: string | null }) {
 
   return (
     <section>
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={selected}
-          onChange={(e) => {
-            setSelected(e.target.value);
-            setRough(null);
-            setFull(null);
-          }}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
-        >
-          {destinations.map((d) => (
-            <option key={d.name} value={d.name}>
-              {d.name} ({d.stops} place{d.stops === 1 ? '' : 's'} from your reels)
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={getRough}
-          disabled={stage !== 'idle'}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white
-                     hover:bg-[#6D28D9] disabled:bg-[#E4E4E7] disabled:text-ink-faint"
-        >
-          {stage === 'rough' ? 'Thinking…' : 'Rough plan'}
-        </button>
-      </div>
+      {/* Arriving from a reel, the destination is already decided and the
+          summary is fetched on mount — so the first thing on screen is the
+          trip itself, not a menu asking what the reel already answered. */}
+      {destination ? (
+        stage === 'rough' && (
+          <p className="text-sm text-ink-muted">Reading your {destination} reels…</p>
+        )
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selected}
+            onChange={(e) => {
+              setSelected(e.target.value);
+              setRough(null);
+              setFull(null);
+            }}
+            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
+          >
+            {destinations.map((d) => (
+              <option key={d.name} value={d.name}>
+                {d.name} ({d.stops} place{d.stops === 1 ? '' : 's'} from your reels)
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={getRough}
+            disabled={stage !== 'idle'}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white
+                       hover:bg-[#6D28D9] disabled:bg-[#E4E4E7] disabled:text-ink-faint"
+          >
+            {stage === 'rough' ? 'Thinking…' : 'Rough plan'}
+          </button>
+        </div>
+      )}
 
       {error && (
         <p className="mt-4 rounded-lg bg-[#FEE2E2] px-4 py-3 text-sm text-[#DC2626]">

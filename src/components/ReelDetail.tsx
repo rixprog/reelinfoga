@@ -356,7 +356,16 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
                   </Card>
                 ))}
               </div>
-              <Link href="/trips" className="mt-3 inline-block text-sm font-semibold text-primary">
+              {/* Carry the destination through, so the planner opens on this
+                  trip instead of asking again with a dropdown. */}
+              <Link
+                href={
+                  p.destination
+                    ? `/trips?destination=${encodeURIComponent(String(p.destination))}`
+                    : '/trips'
+                }
+                className="mt-3 inline-block text-sm font-semibold text-primary"
+              >
                 Plan a trip with these →
               </Link>
             </div>
