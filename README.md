@@ -11,7 +11,30 @@ you can use.
 
 ---
 
-## Run it
+## Run it with Docker (recommended)
+
+The only thing you need installed is Docker. No Node, no Python, no venv.
+
+```bash
+git clone https://github.com/rixprog/reelinfoga.git
+cd reelinfoga
+cp .env.example .env      # add GEMINI_API_KEY and GROQ_API_KEY
+docker compose up --build
+```
+
+Open <http://localhost:3000>. First build takes 4–8 minutes; after that it starts in
+seconds.
+
+Your extracted library lives in `./out` on the host, so rebuilding the image never
+loses what you have analyzed. The API keys are read at runtime from `.env` and are
+never baked into the image.
+
+To reach it from your phone on the same network, use your machine's LAN address
+(`http://192.168.x.x:3000`) — the container listens on all interfaces.
+
+---
+
+## Run it without Docker
 
 **You need:** Node 20+, Python 3.11+, and a Gemini + Groq API key. Both have free
 tiers. ffmpeg is bundled — nothing to install.
@@ -168,6 +191,26 @@ trip.py          costed itineraries      geocode.py   OSM geocoding
 store.py         the saved library       notify.py    Telegram / email
 src/             the Next.js app
 ```
+
+## Troubleshooting
+
+**`Could not start the pipeline: spawn … ENOENT`** — Node cannot find the Python
+interpreter. Either the virtualenv was never created (a global `pip install` does not
+count) or you are on Windows, where the interpreter is at `.venv\Scripts\python.exe`
+rather than `.venv/bin/python`. Create the venv, or point at an existing interpreter:
+
+```bash
+REELBRAIN_PYTHON=/full/path/to/python
+```
+
+Docker avoids this entirely.
+
+**Analysis fails partway through, but the site loads fine** — usually a missing Python
+package. The Gemini and HTTP clients are imported lazily, so an incomplete install
+starts up cleanly and only fails once extraction begins. Re-run
+`.venv/bin/pip install -r requirements.txt`.
+
+**`env file .env not found`** on `docker compose up` — you skipped `cp .env.example .env`.
 
 ## Notes
 

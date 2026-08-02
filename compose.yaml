@@ -1,0 +1,14 @@
+services:
+  reelbrain:
+    build: .
+    ports:
+      - "3000:3000"
+    # Keys are read at runtime, never baked into the image. Requires a .env —
+    # copy .env.example first.
+    env_file:
+      - .env
+    volumes:
+      # The extracted library lives on the host, so `docker compose down` and a
+      # rebuild do not wipe everything the user has analyzed.
+      - ./out:/app/out
+    restart: unless-stopped

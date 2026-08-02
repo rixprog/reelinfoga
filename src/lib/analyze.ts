@@ -12,9 +12,9 @@
 // the stages is both more robust and a better demo.
 
 import { spawn } from 'node:child_process';
-import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
+import { resolvePython, explainSpawnError } from './python';
 import type { ProcessingStep } from './types';
 
 export interface JobStage {
@@ -43,22 +43,6 @@ const store: Map<string, Job> =
   ((globalThis as { __reelJobs?: Map<string, Job> }).__reelJobs = new Map());
 
 const PROJECT_ROOT = process.cwd();
-
-// Resolve the interpreter without handing Turbopack a traceable path literal.
-//
-// `path.join(root, '.venv', 'bin', 'python')` looks like a static asset reference
-// to the bundler, which then tries to follow `.venv/bin/python` — a symlink out to
-// the system Python — and fails the production build with "points out of the
-// filesystem root". Assembling the segments at runtime keeps zero-config working
-// while staying invisible to static analysis.
-const DEFAULT_VENV_PYTHON = ['.venv', 'bin', 'python'].join(path.sep);
-
-function resolvePython(): string {
-  const configured = process.env.REELBRAIN_PYTHON || DEFAULT_VENV_PYTHON;
-  return path.isAbsolute(configured)
-    ? configured
-    : path.resolve(PROJECT_ROOT, configured);
-}
 
 export function getJob(id: string): Job | undefined {
   return store.get(id);
@@ -113,7 +97,7 @@ export function startJob(url: string): Job {
 
   child.on('error', (err) => {
     job.status = 'error';
-    job.error = `Could not start the pipeline: ${err.message}`;
+    job.error = `Could not start the pipeline. ${explainSpawnError(err)}`;
     job.finishedAt = Date.now();
   });
 

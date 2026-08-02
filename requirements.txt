@@ -2,6 +2,11 @@ instaloader>=4.15
 imageio-ffmpeg>=0.5
 groq>=0.11
 anthropic>=0.40
+# Imported lazily inside functions (extract.py, search.py, notify.py), so a
+# missing install does not fail at startup — it fails mid-extraction, which
+# looks like a broken app rather than a missing dependency. Keep them declared.
+google-genai>=2.16
+requests>=2.32
 python-dotenv>=1.0
 indic-transliteration>=2.3
 browser_cookie3>=0.19

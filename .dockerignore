@@ -1,0 +1,24 @@
+# Host-built artefacts. .venv especially: it holds absolute host paths and a
+# Linux/macOS-specific layout, so copying it in would shadow the venv the image
+# builds and break the Python side in ways that are painful to diagnose.
+.venv
+node_modules
+.next
+
+# Secrets never go in a layer. They arrive at runtime via env_file.
+.env
+
+# Regenerated per run, and downloads/ is purged after every extraction anyway.
+downloads
+out
+
+.git
+.gitignore
+*.md
+docs
+mobile
+.vscode
+.idea
+__pycache__
+*.pyc
+.DS_Store
