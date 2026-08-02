@@ -11,10 +11,29 @@ import { formatDistance, metresBetween } from '@/lib/geo';
 import { categoryOf, placeKey } from '@/lib/ui';
 import { RELAY_URL, useLiveLocation } from '@/lib/use-live-location';
 
-/** Alert when the phone comes within this of a saved place. */
-const NEAR_M = 300;
-/** Must get this far away before the same place can alert again. */
-const CLEAR_M = 450;
+/** Alert when the phone comes within this of a saved food spot. */
+const NEAR_M = 10_000;
+/** Must get this far back out before the same place can alert again. */
+const CLEAR_M = 15_000;
+/** Only food spots raise alerts — a landmark you are 8km from is not news. */
+const ALERT_CATEGORIES = new Set(['food_spot']);
+
+/**
+ * A real desktop notification, so the alert lands even when the map is not the
+ * focused tab — which is the whole point when the phone is what is moving.
+ *
+ * Silent no-op without permission: the in-app card is always shown too, so a
+ * denied prompt costs the demo nothing.
+ */
+function notify(title: string, body: string) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, { body, tag: 'reelinfoga-nearby' });
+  } catch {
+    // Some browsers reject constructed Notifications outside a service worker.
+  }
+}
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -132,8 +151,11 @@ export function MapView() {
     let nearest: { p: (typeof allPlaces)[number]; d: number; key: string } | null = null;
 
     allPlaces.forEach((p, n) => {
-      const d = metresBetween({ lat: live.lat, lon: live.lon }, { lat: p.lat, lon: p.lon });
+      // Index over the full list so the key matches the rail and the map; the
+      // category test is a filter on alerting, not on identity.
       const key = placeKey(p, n);
+      if (!ALERT_CATEGORIES.has(p.category)) return;
+      const d = metresBetween({ lat: live.lat, lon: live.lon }, { lat: p.lat, lon: p.lon });
       if (d > CLEAR_M) announced.current.delete(key);
       if (d <= NEAR_M && !announced.current.has(key)) {
         if (!nearest || d < nearest.d) nearest = { p, d, key };
@@ -144,6 +166,7 @@ export function MapView() {
       const hit = nearest as { p: (typeof allPlaces)[number]; d: number; key: string };
       announced.current.add(hit.key);
       setAlert({ name: hit.p.name, sub: hit.p.sub, metres: hit.d, key: hit.key });
+      notify(hit.p.name, `${formatDistance(hit.d)} away${hit.p.sub ? ` · ${hit.p.sub}` : ''}`);
     }
   }, [live, allPlaces]);
 
@@ -281,7 +304,19 @@ export function MapView() {
               Top-right because Leaflet's zoom control owns the top-left. */}
           <div className="absolute right-3 top-3 z-[500] flex items-center gap-2">
             <button
-              onClick={() => setTracking((t) => !t)}
+              onClick={() => {
+                // Ask only when switching tracking on — a permission prompt on
+                // page load is the fastest way to get permanently denied.
+                if (
+                  !tracking &&
+                  typeof window !== 'undefined' &&
+                  'Notification' in window &&
+                  Notification.permission === 'default'
+                ) {
+                  Notification.requestPermission().catch(() => {});
+                }
+                setTracking((t) => !t);
+              }}
               className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-md transition ${
                 tracking
                   ? 'bg-blue-600 text-white'
