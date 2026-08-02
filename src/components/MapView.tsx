@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Empty, Eyebrow } from './Shell';
+import { Card, Empty, Eyebrow, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import type { SavedItem } from '@/lib/store-client';
 import { categoryOf } from '@/lib/ui';
@@ -12,8 +12,8 @@ import { categoryOf } from '@/lib/ui';
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
   loading: () => (
-    <div className="grid h-full place-items-center bg-background text-sm text-ink-faint">
-      Loading map…
+    <div className="grid h-full place-items-center bg-slate-50 text-sm text-zinc-400 font-medium">
+      Loading map engine…
     </div>
   ),
 });
@@ -28,7 +28,6 @@ export interface Place {
   approximate?: boolean;
 }
 
-/** Pull every located place out of the library, whatever vertical it came from. */
 function toPlaces(items: SavedItem[]): Place[] {
   const out: Place[] = [];
   for (const i of items) {
@@ -64,19 +63,18 @@ export function MapView() {
   const [items, setItems] = useState<SavedItem[]>([]);
   const [geo, setGeo] = useState<Place[]>([]);
   const [filter, setFilter] = useState<'all' | 'food_spot' | 'travel'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // /api/places geocodes only — no language model. Calling the trip planner
-    // here (as an earlier version did) meant an LLM ran just to draw pins.
     Promise.all([
       fetch('/api/reels', { cache: 'no-store' }).then((r) => r.json()),
       fetch('/api/places', { cache: 'no-store' }).then((r) => r.json()),
     ])
-      .then(([reels, geo]) => {
+      .then(([reels, geoData]) => {
         setItems(reels.items ?? []);
-        setGeo(geo.places ?? []);
+        setGeo(geoData.places ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -92,77 +90,171 @@ export function MapView() {
         seen.add(k);
         return true;
       })
-      .filter((p) => filter === 'all' || p.category === filter);
-  }, [items, geo, filter]);
+      .filter((p) => filter === 'all' || p.category === filter)
+      .filter((p) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return p.name.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q);
+      });
+  }, [items, geo, filter, searchQuery]);
 
   if (loading) {
     return (
-      <div className="grid h-[60vh] place-items-center text-sm text-ink-muted">
+      <div className="grid h-[60vh] place-items-center text-sm text-zinc-500 font-medium">
         Locating your saved places…
       </div>
     );
   }
 
-  if (places.length === 0) {
-    return (
-      <Empty
-        title="Nothing on the map yet"
-        body="Save a reel about a restaurant or a place to visit and its pin will appear here."
-      />
-    );
-  }
-
   return (
-    <div className="flex h-[calc(100dvh-3.5rem-4rem)] flex-col overflow-hidden border-t border-line sm:h-[calc(100dvh-3.5rem)] sm:flex-row">
-      {/* List rail: desktop only. On a phone the map plus a bottom sheet is the
-          whole screen — a side rail would leave the map unusably narrow. */}
-      <aside className="hidden w-[320px] shrink-0 flex-col border-r border-line bg-surface sm:flex">
-        <div className="border-b border-line px-4 py-3">
-          <Eyebrow>{places.length} places</Eyebrow>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {places.map((p, n) => (
-            <button
-              key={`${p.name}-${n}`}
-              onClick={() => setActive(`${p.name}-${n}`)}
-              className={`flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left transition hover:bg-background ${
-                active === `${p.name}-${n}` ? 'bg-primary-soft/40' : ''
-              }`}
-            >
-              <span
-                className="grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white"
-                style={{ background: categoryOf(p.category).ink }}
-              >
-                {n + 1}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{p.name}</span>
-                <span className="block truncate text-xs text-ink-muted">
-                  {p.sub}
-                  {p.approximate && ' · approximate'}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </aside>
+    <div className="w-full space-y-8 text-zinc-900 font-sans pb-12">
+      {/* 1. HERO BANNER */}
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-[#F4F9FF] via-[#EBF4FD] to-[#F4F2FF] p-6 sm:p-10 shadow-sm border border-blue-100/60">
+        <div className="relative z-10 max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-blue-100/90 px-4 py-1.5 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur-sm mb-3">
+            <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+            Interactive Place Explorer
+          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-zinc-900">
+            Travel &amp; Place Discovery
+          </h1>
+          <p className="mt-3 text-sm sm:text-base leading-relaxed text-zinc-600">
+            Explore every restaurant, café, hotel, and landmark extracted from your Instagram reels on a visual map.
+          </p>
 
-      <div className="relative min-h-0 flex-1">
-        <div className="absolute right-3 top-3 z-[500] flex rounded-full border border-line bg-surface p-1 shadow-sm">
-          {(['all', 'food_spot', 'travel'] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setFilter(k)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                filter === k ? 'bg-primary text-white' : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              {k === 'all' ? 'All' : categoryOf(k).one}
-            </button>
-          ))}
+          {/* Floating Badges */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 border border-blue-100 px-3.5 py-1.5 text-xs font-semibold text-blue-700 shadow-sm">
+              📍 {places.length} Places Found
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 border border-orange-100 px-3.5 py-1.5 text-xs font-semibold text-orange-700 shadow-sm">
+              🍕 Restaurants &amp; Cafes
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 border border-purple-100 px-3.5 py-1.5 text-xs font-semibold text-purple-700 shadow-sm">
+              ✨ Hidden Gems
+            </span>
+          </div>
         </div>
-        <LocationMap places={places} active={active} onSelect={setActive} />
+      </section>
+
+      {/* 2. DASHBOARD LAYOUT (SIDEBAR + MAP) */}
+      <div className="relative overflow-hidden rounded-[28px] bg-white border border-purple-100/80 shadow-xl shadow-purple-900/5 min-h-[560px] flex flex-col lg:flex-row">
+        {/* Left Sidebar */}
+        <aside className="w-full lg:w-[340px] shrink-0 border-b lg:border-b-0 lg:border-r border-zinc-100 bg-slate-50/50 flex flex-col">
+          <div className="p-4 border-b border-zinc-100 space-y-3 bg-white">
+            <div className="flex items-center justify-between">
+              <Eyebrow>Discovered Places ({places.length})</Eyebrow>
+            </div>
+            {/* Search Input */}
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name or city..."
+              className="w-full rounded-xl border border-zinc-200 bg-slate-50 px-3.5 py-2 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-violet-500 focus:bg-white"
+            />
+            {/* Filter Pills */}
+            <div className="flex gap-1.5">
+              {(['all', 'food_spot', 'travel'] as const).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setFilter(k)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                    filter === k
+                      ? 'bg-violet-600 text-white shadow-sm'
+                      : 'bg-slate-100 text-zinc-600 hover:bg-zinc-200'
+                  }`}
+                >
+                  {k === 'all' ? 'All' : categoryOf(k).one}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Scrollable Places List */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[460px]">
+            {places.length === 0 ? (
+              <div className="p-6 text-center text-xs text-zinc-400">
+                No places found matching your filter.
+              </div>
+            ) : (
+              places.map((p, n) => (
+                <button
+                  key={`${p.name}-${n}`}
+                  onClick={() => setActive(`${p.name}-${n}`)}
+                  className={`w-full text-left rounded-xl p-3 border transition flex items-center gap-3 ${
+                    active === `${p.name}-${n}`
+                      ? 'bg-violet-50/90 border-violet-300 shadow-sm'
+                      : 'bg-white border-zinc-100 hover:border-zinc-200'
+                  }`}
+                >
+                  <span
+                    className="grid size-8 shrink-0 place-items-center rounded-xl text-xs font-bold text-white shadow-sm"
+                    style={{ background: categoryOf(p.category).ink }}
+                  >
+                    {n + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-zinc-900">{p.name}</p>
+                    <p className="truncate text-[10px] text-zinc-500 mt-0.5">
+                      {p.sub || 'Extracted Location'}
+                      {p.approximate && ' · approx'}
+                    </p>
+                  </div>
+                  <svg className="w-4 h-4 text-zinc-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* Right Map View */}
+        <div className="relative flex-1 min-h-[400px] lg:min-h-[560px]">
+          <LocationMap places={places} active={active} onSelect={setActive} />
+        </div>
       </div>
+
+      {/* 3. BOTTOM CAROUSEL OF DISCOVERED PLACES */}
+      {places.length > 0 && (
+        <section className="relative">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <Eyebrow>Spot Showcase</Eyebrow>
+              <h2 className="text-xl font-bold text-zinc-900">Featured Locations</h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {places.slice(0, 4).map((loc, idx) => (
+              <div
+                key={`${loc.name}-${idx}`}
+                className="group rounded-2xl bg-white border border-zinc-100 overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-md transition-all"
+              >
+                <div className="relative h-28 overflow-hidden bg-zinc-900">
+                  <Thumb shortcode={loc.shortcode} category={loc.category} fill />
+                  <span
+                    className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold text-white shadow-sm"
+                    style={{ background: categoryOf(loc.category).ink }}
+                  >
+                    {categoryOf(loc.category).one}
+                  </span>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs font-bold text-zinc-900 truncate">{loc.name}</p>
+                  <p className="text-[10px] text-zinc-500 truncate mt-0.5">{loc.sub || 'Saved spot'}</p>
+                  <Link
+                    href={`/reel/${loc.shortcode}`}
+                    className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-violet-50 px-2.5 py-1.5 text-[10px] font-bold text-violet-700 hover:bg-violet-100 transition"
+                  >
+                    Open Reel →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

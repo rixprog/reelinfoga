@@ -1,6 +1,11 @@
 import { MapView } from '@/components/MapView';
+import { Page } from '@/components/Shell';
 
 export default function MapPage() {
-  // Full-bleed: the map IS the page, so it gets no Page wrapper or padding.
-  return <MapView />;
+  return (
+    <Page bare wide>
+      <MapView />
+    </Page>
+  );
 }
+

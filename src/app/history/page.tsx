@@ -3,8 +3,9 @@ import { Page } from '@/components/Shell';
 
 export default function HistoryPage() {
   return (
-    <Page title="History" subtitle="Everything you've analyzed, newest first.">
+    <Page bare wide>
       <HistoryList />
     </Page>
   );
 }
+

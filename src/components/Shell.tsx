@@ -7,8 +7,10 @@ const NAV = [
   { href: '/', label: 'Analyze', match: (p: string) => p === '/' },
   { href: '/reels', label: 'Reels', match: (p: string) => p.startsWith('/reels') || p.startsWith('/reel/') },
   { href: '/map', label: 'Map', match: (p: string) => p.startsWith('/map') },
+  { href: '/saved', label: 'Saved', match: (p: string) => p.startsWith('/saved') },
   { href: '/history', label: 'History', match: (p: string) => p.startsWith('/history') },
 ];
+
 
 export function Logo() {
   return (

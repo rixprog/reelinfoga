@@ -134,60 +134,47 @@ export function Analyze() {
     <div className="w-full space-y-12 text-zinc-900 font-sans pb-12">
       
       {/* 1. HERO CARD BANNER CONTAINER */}
-      <section className="relative overflow-hidden rounded-[36px] bg-gradient-to-b from-[#F2EAFF] via-[#EBE0FF] to-[#F4EEFF] p-6 sm:p-10 lg:p-14 shadow-sm border border-purple-200/50">
-        
-        {/* Floating 3D Orbs */}
-        {/* Left Pink Torus / Donut */}
-        <div className="pointer-events-none absolute -left-4 top-1/2 hidden h-20 w-20 -translate-y-1/2 animate-float sm:block">
-          <div className="h-full w-full rounded-full bg-gradient-to-tr from-[#FF7BB0] to-[#FFA6C9] p-4 shadow-xl shadow-pink-500/20 ring-4 ring-white/60">
-            <div className="h-full w-full rounded-full bg-[#F2EAFF]" />
-          </div>
-        </div>
-        {/* Top Right Violet Sphere */}
-        <div className="pointer-events-none absolute right-8 top-8 hidden h-20 w-20 animate-float-slow rounded-full bg-gradient-to-tr from-[#8B5CF6] via-[#A78BFA] to-[#C4B5FD] shadow-2xl shadow-purple-500/30 ring-4 ring-white/60 sm:block" />
-        {/* Bottom Pearl Sphere */}
-        <div className="pointer-events-none absolute right-16 bottom-6 hidden h-14 w-14 animate-float-reverse rounded-full bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 shadow-lg ring-2 ring-white/80 sm:block" />
-
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-[#FAF8FF] via-[#F4EFFF] to-[#F8F6FF] p-6 sm:p-10 lg:p-12 shadow-sm border border-purple-100/80">
         {/* Hero Content Grid */}
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
           
           {/* Left Hero Column */}
           <div className="flex flex-col items-center text-center lg:col-span-6 lg:items-start lg:text-left">
             
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-100/90 px-4 py-1.5 text-xs font-semibold text-violet-700 shadow-sm backdrop-blur-sm">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-100/90 px-3.5 py-1 text-xs font-semibold text-violet-700 shadow-sm backdrop-blur-sm">
               <span className="h-2 w-2 rounded-full bg-violet-600 animate-pulse" />
               AI-Powered Instagram Intelligence
             </div>
 
-            <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl lg:text-6xl lg:leading-[1.12]">
+            <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl lg:text-5xl lg:leading-[1.12]">
               All your<br />
               Instagram feeds.<br />
               One smart place.
             </h1>
 
-            <p className="mt-5 max-w-md text-base leading-relaxed text-zinc-600 sm:text-lg">
+            <p className="mt-4 max-w-md text-base leading-relaxed text-zinc-600">
               Collect, analyze and explore Instagram feeds effortlessly. Turn saved reels into searchable recipes, locations, transcripts, and deadlines.
             </p>
 
             <div className="mt-8 flex items-center justify-center lg:justify-start gap-4">
               <button
                 onClick={scrollToAnalyze}
-                className="inline-flex items-center gap-3 rounded-full bg-black px-8 py-4 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-95 shadow-xl shadow-black/10"
+                className="inline-flex items-center gap-2.5 rounded-full bg-zinc-900 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-95 shadow-md shadow-zinc-900/10"
               >
                 <span>Go to Feeds</span>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </button>
             </div>
           </div>
 
           {/* Right Hero Column: 3-Phone Mockup */}
-          <div className="relative lg:col-span-6 flex justify-center items-center py-4">
-            <div className="relative w-full max-w-[420px] sm:max-w-[460px] h-[460px] sm:h-[500px] flex items-center justify-center">
+          <div className="relative lg:col-span-6 flex justify-center items-center py-2">
+            <div className="relative w-full max-w-[420px] sm:max-w-[460px] h-[450px] sm:h-[480px] flex items-center justify-center">
               
               {/* Phone 1: Left Phone */}
-              <div className="absolute left-0 sm:left-2 top-6 z-10 w-[170px] sm:w-[195px] h-[350px] sm:h-[400px] -rotate-12 rounded-[36px] bg-zinc-950 p-2 shadow-2xl shadow-purple-900/20 ring-1 ring-white/30 transition-all duration-300 hover:rotate-0 hover:z-30 animate-float-slow">
+              <div className="absolute left-0 sm:left-2 top-6 z-10 w-[170px] sm:w-[195px] h-[350px] sm:h-[400px] -rotate-6 rounded-[36px] bg-zinc-950 p-2 shadow-xl shadow-purple-950/15 ring-1 ring-white/30 transition-transform duration-300 hover:rotate-0 hover:z-30">
                 <div className="h-full w-full overflow-hidden rounded-[28px] bg-zinc-900 text-white flex flex-col justify-between p-2">
                   <div className="flex items-center justify-between text-[10px] font-semibold opacity-90 px-1 border-b border-zinc-800 pb-1 text-zinc-300">
                     <span className="font-bold tracking-tight">Instagram</span>
@@ -250,7 +237,7 @@ export function Analyze() {
               </div>
 
               {/* Phone 2: Center Phone */}
-              <div className="absolute z-20 w-[200px] sm:w-[230px] h-[410px] sm:h-[460px] rounded-[40px] bg-zinc-950 p-2.5 shadow-2xl shadow-purple-600/30 ring-2 ring-purple-300/60 transition-all duration-300 hover:scale-105 animate-float">
+              <div className="absolute z-20 w-[200px] sm:w-[230px] h-[410px] sm:h-[460px] rounded-[40px] bg-zinc-950 p-2.5 shadow-2xl shadow-purple-950/20 ring-2 ring-purple-300/40 transition-all duration-300 hover:scale-105">
                 <div className="h-full w-full overflow-hidden rounded-[32px] bg-black text-white relative flex flex-col justify-between p-2">
                   
                   <div className="mx-auto h-3.5 w-16 rounded-full bg-zinc-900 z-20" />
@@ -309,7 +296,7 @@ export function Analyze() {
               </div>
 
               {/* Phone 3: Right Phone */}
-              <div className="absolute right-0 sm:right-2 top-6 z-10 w-[170px] sm:w-[195px] h-[350px] sm:h-[400px] rotate-12 rounded-[36px] bg-zinc-950 p-2 shadow-2xl shadow-purple-900/20 ring-1 ring-white/30 transition-all duration-300 hover:rotate-0 hover:z-30 animate-float-reverse">
+              <div className="absolute right-0 sm:right-2 top-6 z-10 w-[170px] sm:w-[195px] h-[350px] sm:h-[400px] rotate-6 rounded-[36px] bg-zinc-950 p-2 shadow-xl shadow-purple-950/15 ring-1 ring-white/30 transition-transform duration-300 hover:rotate-0 hover:z-30">
                 <div className="h-full w-full overflow-hidden rounded-[28px] bg-zinc-900 text-white flex flex-col justify-between p-2.5">
                   
                   <div className="flex items-center justify-between text-[9px] text-zinc-400 border-b border-zinc-800 pb-1">
@@ -356,20 +343,6 @@ export function Analyze() {
           2. ANALYZE REEL — Premium workspace with glass card & AI illustration
          ═══════════════════════════════════════════════════════════════ */}
       <section id="analyze-section" className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        {/* Dotted background */}
-        <div className="pointer-events-none absolute inset-0 bg-dots-light opacity-40" />
-        
-        {/* Floating decorations */}
-        <div className="pointer-events-none absolute -left-6 top-20 h-28 w-28 rounded-full bg-gradient-to-br from-purple-200/40 to-violet-300/20 blur-2xl animate-float-slow" />
-        <div className="pointer-events-none absolute right-10 bottom-16 h-20 w-20 rounded-full bg-gradient-to-tr from-pink-200/30 to-purple-200/20 blur-xl animate-float-reverse" />
-        
-        {/* Sparkle */}
-        <div className="pointer-events-none absolute right-24 top-12 animate-sparkle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" fill="#C4B5FD" />
-          </svg>
-        </div>
-
         <div className="relative grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
           {/* Left Column — Analyze card */}
           <div className="lg:col-span-7">
@@ -1179,8 +1152,6 @@ export function Analyze() {
           8. PRICING — Glass cards + trust section
          ═══════════════════════════════════════════════════════════════ */}
       <section id="pricing-section" className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="pointer-events-none absolute inset-0 bg-dots-light opacity-15" />
-
         <div className="relative text-center max-w-xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 rounded-full bg-violet-100/90 px-3.5 py-1.5 text-[11px] font-semibold text-violet-700 mb-4">
             💎 Simple Pricing
@@ -1195,7 +1166,7 @@ export function Analyze() {
 
         <div className="relative mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
           {/* Basic */}
-          <div className="rounded-[24px] bg-white/70 backdrop-blur-xl border border-zinc-200/80 p-7 sm:p-8 shadow-sm hover:shadow-lg transition-shadow duration-300">
+          <div className="rounded-[24px] bg-white border border-zinc-200/80 p-7 sm:p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
             <div className="flex items-center gap-3 mb-6">
               <span className="grid size-10 place-items-center rounded-xl bg-zinc-100 text-lg">🌱</span>
               <h3 className="text-lg font-bold text-zinc-900">Basic</h3>
@@ -1222,8 +1193,8 @@ export function Analyze() {
           </div>
 
           {/* Pro — highlighted */}
-          <div className="relative rounded-[24px] bg-white/80 backdrop-blur-xl border-2 border-[#8B5CF6] p-7 sm:p-8 shadow-xl shadow-purple-500/10 animate-pulse-glow lg:-translate-y-2">
-            <span className="absolute -top-3.5 right-6 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-1.5 text-[10px] font-bold text-white shadow-lg">
+          <div className="relative rounded-[24px] bg-white border-2 border-violet-600 p-7 sm:p-8 shadow-md lg:-translate-y-2">
+            <span className="absolute -top-3.5 right-6 rounded-full bg-violet-600 px-4 py-1 text-[10px] font-bold text-white shadow-sm">
               ✨ Most Popular
             </span>
             <div className="flex items-center gap-3 mb-6">
@@ -1248,13 +1219,13 @@ export function Analyze() {
                 </li>
               ))}
             </ul>
-            <button onClick={scrollToAnalyze} className="w-full rounded-2xl bg-[#8B5CF6] py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-purple-500/20 hover:bg-[#7C3AED] transition">
+            <button onClick={scrollToAnalyze} className="w-full rounded-2xl bg-violet-600 py-3.5 text-center text-sm font-semibold text-white shadow-md hover:bg-violet-700 transition">
               Upgrade to Pro
             </button>
           </div>
 
           {/* Premium */}
-          <div className="rounded-[24px] bg-white/70 backdrop-blur-xl border border-zinc-200/80 p-7 sm:p-8 shadow-sm hover:shadow-lg transition-shadow duration-300">
+          <div className="rounded-[24px] bg-white border border-zinc-200/80 p-7 sm:p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
             <div className="flex items-center gap-3 mb-6">
               <span className="grid size-10 place-items-center rounded-xl bg-amber-50 text-lg">👑</span>
               <h3 className="text-lg font-bold text-zinc-900">Premium</h3>
@@ -1308,35 +1279,25 @@ export function Analyze() {
           9. CTA — Full-width rounded banner
          ═══════════════════════════════════════════════════════════════ */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#F2EAFF] via-[#EBE0FF] to-[#E8D5FF] p-10 sm:p-14 text-center shadow-sm border border-purple-200/50">
-          {/* Floating decorations */}
-          <div className="pointer-events-none absolute -left-8 top-8 h-24 w-24 rounded-full bg-gradient-to-br from-pink-200/40 to-violet-300/30 blur-2xl animate-float" />
-          <div className="pointer-events-none absolute right-12 bottom-4 h-20 w-20 rounded-full bg-gradient-to-tr from-purple-200/40 to-blue-200/20 blur-xl animate-float-reverse" />
-          <div className="pointer-events-none absolute left-1/3 -top-4 animate-sparkle">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" fill="#C4B5FD" /></svg>
-          </div>
-          <div className="pointer-events-none absolute right-1/4 bottom-8 animate-sparkle" style={{ animationDelay: '1.5s' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" fill="#DDD6FE" /></svg>
-          </div>
-
+        <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#FAF8FF] via-[#F4EFFF] to-[#FAF6FF] p-10 sm:p-14 text-center shadow-sm border border-purple-100">
           <div className="relative">
-            <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl lg:text-4xl">
               Ready to Organize<br />Every Reel?
             </h2>
-            <p className="mt-4 max-w-lg mx-auto text-base leading-relaxed text-zinc-600">
+            <p className="mt-3 max-w-lg mx-auto text-base leading-relaxed text-zinc-600">
               Let AI remember every place, recipe, deal, and deadline from your saved reels. Start analyzing for free — no credit card required.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <button
                 onClick={scrollToAnalyze}
-                className="inline-flex items-center gap-2 rounded-full bg-black px-8 py-4 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-95 shadow-xl shadow-black/10"
+                className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-95 shadow-md shadow-zinc-900/10"
               >
                 Analyze a Reel
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
               </button>
               <button
                 onClick={scrollToFeatures}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-purple-200 bg-white/80 backdrop-blur-sm px-8 py-4 text-sm font-semibold text-violet-700 transition hover:bg-purple-50 hover:border-purple-300"
+                className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-8 py-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
               >
                 View Demo
               </button>
