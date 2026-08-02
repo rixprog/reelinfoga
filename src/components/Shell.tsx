@@ -7,7 +7,6 @@ const NAV = [
   { href: '/', label: 'Analyze', match: (p: string) => p === '/' },
   { href: '/reels', label: 'Reels', match: (p: string) => p.startsWith('/reels') || p.startsWith('/reel/') },
   { href: '/map', label: 'Map', match: (p: string) => p.startsWith('/map') },
-  { href: '/saved', label: 'Saved', match: (p: string) => p.startsWith('/saved') },
   { href: '/history', label: 'History', match: (p: string) => p.startsWith('/history') },
 ];
 
@@ -126,9 +125,6 @@ function TabIcon({ name, active }: { name: string; active: boolean }) {
           <path d="M12 21s6.5-6.1 6.5-10.5A6.5 6.5 0 0 0 5.5 10.5C5.5 14.9 12 21 12 21Z" {...common} />
           <circle cx="12" cy="10.4" r="2.3" {...common} />
         </>
-      )}
-      {name === 'Saved' && (
-        <path d="M6.5 3.6h11a1 1 0 0 1 1 1v15.2l-6.5-4-6.5 4V4.6a1 1 0 0 1 1-1Z" {...common} />
       )}
       {name === 'History' && (
         <>

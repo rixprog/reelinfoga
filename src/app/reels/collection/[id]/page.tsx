@@ -1,5 +1,5 @@
+import { CollectionHeader } from '@/components/CollectionHeader';
 import { ReelsGrid } from '@/components/ReelsGrid';
-import { CollectionHeader } from '@/components/SavedView';
 import { Page } from '@/components/Shell';
 
 export default async function CollectionPage({

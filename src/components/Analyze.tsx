@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -610,24 +611,63 @@ export function Analyze() {
 
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
           {[
-            { title: 'Foodspots', desc: 'Restaurants & cafes', icon: '🍔', color: 'bg-orange-50/80 border-orange-100 text-orange-600 hover:bg-orange-100/60', href: '/reels?category=food_spot' },
-            { title: 'Travel', desc: 'Places & stays', icon: '✈️', color: 'bg-sky-50/80 border-sky-100 text-sky-600 hover:bg-sky-100/60', href: '/reels?category=travel' },
-            { title: 'Events', desc: 'Concerts & shows', icon: '🎟️', color: 'bg-purple-50/80 border-purple-100 text-purple-600 hover:bg-purple-100/60', href: '/reels?category=deadline' },
-            { title: 'Recipe', desc: 'Dishes & baking', icon: '🍳', color: 'bg-rose-50/80 border-rose-100 text-rose-600 hover:bg-rose-100/60', href: '/reels?category=recipe' },
-          ].map((c) => (
+            {
+              title: 'Foodspots',
+              desc: 'Restaurants & cafes',
+              icon: '🍔',
+              image: '/categories/foodspots.jpg',
+              href: '/reels?category=food_spot',
+            },
+            {
+              title: 'Travel',
+              desc: 'Places & stays',
+              icon: '✈️',
+              image: '/categories/travel.jpg',
+              href: '/reels?category=travel',
+            },
+            {
+              title: 'Events',
+              desc: 'Concerts & shows',
+              icon: '🎟️',
+              image: '/categories/events.jpg',
+              href: '/reels?category=deadline',
+            },
+            {
+              title: 'Recipe',
+              desc: 'Dishes & baking',
+              icon: '🍳',
+              image: '/categories/recipe.jpg',
+              href: '/reels?category=recipe',
+            },
+          ].map((cat) => (
             <Link
-              key={c.title}
-              href={c.href}
-              className={`group flex flex-col justify-between rounded-[22px] border p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg ${c.color}`}
+              key={cat.title}
+              href={cat.href}
+              className="group relative aspect-[9/16] overflow-hidden rounded-2xl border border-zinc-200/80 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="flex items-center justify-between">
-                <span className="grid size-12 place-items-center rounded-xl bg-white shadow-sm text-xl">{c.icon}</span>
-                <svg className="w-4 h-4 opacity-30 group-hover:opacity-100 transition-opacity duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <Image
+                src={cat.image}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 50vw, 25vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <span className="grid size-9 place-items-center rounded-xl bg-white/95 text-base shadow-sm">
+                  {cat.icon}
+                </span>
+                <h3 className="mt-2.5 text-base font-bold text-white drop-shadow-sm">{cat.title}</h3>
+                <p className="mt-0.5 text-xs text-white/80">{cat.desc}</p>
               </div>
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-zinc-900 group-hover:text-zinc-950">{c.title}</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">{c.desc}</p>
-              </div>
+              <svg
+                className="absolute right-3 top-3 w-4 h-4 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           ))}
         </div>
