@@ -204,7 +204,7 @@ export function ReelsGrid({ collectionId }: { collectionId?: string }) {
             {cols.map((c) => (
               <Link
                 key={c.id}
-                href={`/saved/${c.id}`}
+                href={`/reels/collection/${c.id}`}
                 className="w-40 shrink-0"
               >
                 <div className="flex h-24 gap-0.5 overflow-hidden rounded-xl bg-background">
