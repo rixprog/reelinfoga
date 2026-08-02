@@ -212,6 +212,18 @@ starts up cleanly and only fails once extraction begins. Re-run
 
 **`env file .env not found`** on `docker compose up` — you skipped `cp .env.example .env`.
 
+**`ports are not available: ... bind: Only one usage of each socket address`** — port
+3000 is taken. Find the culprit (`netstat -ano | findstr :3000` on Windows,
+`lsof -i :3000` elsewhere) and stop it, or pick another port in `.env`:
+
+```
+HOST_PORT=3001
+```
+
+On Windows the port can be unavailable with nothing listening at all, because
+Hyper-V reserves ranges — `netsh interface ipv4 show excludedportrange protocol=tcp`
+shows them. Changing `HOST_PORT` is the fix there.
+
 ## Notes
 
 - `.env` is gitignored and must never be committed.
