@@ -2,7 +2,7 @@
 
 export const CATEGORY = {
   food_spot: { label: 'Food Spots', one: 'Food spot', tint: '#FFEDD5', ink: '#EA580C' },
-  deadline: { label: 'Deadlines', one: 'Deadline', tint: '#FEF3C7', ink: '#D97706' },
+  deadline: { label: 'Events', one: 'Event', tint: '#FEF3C7', ink: '#D97706' },
   travel: { label: 'Travel', one: 'Travel', tint: '#CCFBF1', ink: '#0D9488' },
   recipe: { label: 'Recipes', one: 'Recipe', tint: '#FFE4E6', ink: '#E11D48' },
   product: { label: 'Products', one: 'Product', tint: '#EDE9FE', ink: '#7C3AED' },

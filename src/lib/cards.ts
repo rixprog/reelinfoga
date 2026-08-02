@@ -76,7 +76,7 @@ export const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 export const CATEGORY_META: Record<string, { icon: string; label: string }> = {
   food_spot: { icon: '🍽️', label: 'Food spot' },
-  deadline: { icon: '⏰', label: 'Deadline' },
+  deadline: { icon: '⏰', label: 'Event' },
   travel: { icon: '🗺️', label: 'Travel' },
   recipe: { icon: '👨‍🍳', label: 'Recipe' },
   product: { icon: '🛍️', label: 'Product' },

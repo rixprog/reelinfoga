@@ -132,7 +132,7 @@ TELEGRAM_CHAT_ID=987654321`}
       </section>
 
       <section>
-        <Eyebrow>Deadline reminders</Eyebrow>
+        <Eyebrow>Event reminders</Eyebrow>
         <Card className="mt-3 p-5">
           <p className="text-sm leading-relaxed text-ink-muted">
             Reminders fire at 7 days, 2 days and the morning of a deadline — each one

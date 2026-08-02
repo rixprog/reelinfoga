@@ -953,7 +953,7 @@ export function Analyze() {
                   { label: 'Places Found', value: '234', pct: 72, color: '#3B82F6' },
                   { label: 'Recipes', value: '156', pct: 58, color: '#F43F5E' },
                   { label: 'Products', value: '89', pct: 40, color: '#F59E0B' },
-                  { label: 'Deadlines', value: '42', pct: 25, color: '#10B981' },
+                  { label: 'Events', value: '42', pct: 25, color: '#10B981' },
                 ].map((stat) => (
                   <div key={stat.label} className="flex items-center gap-4">
                     {/* Circular progress */}
@@ -1124,7 +1124,7 @@ export function Analyze() {
               ),
             },
             {
-              title: 'Deadline Finder',
+              title: 'Event Finder',
               desc: 'Never miss a limited-time offer, event date, or registration deadline mentioned in reels. Get smart reminders before deadlines expire so you can act in time.',
               icon: '📅',
               gradient: 'from-indigo-50 to-blue-50',
@@ -1134,7 +1134,7 @@ export function Analyze() {
               illustration: (
                 <div className="relative p-6">
                   <div className="rounded-2xl bg-white border border-indigo-100/60 p-4 shadow-md">
-                    <div className="flex items-center gap-2 mb-3"><span className="text-sm">📅</span><span className="text-[10px] font-bold text-indigo-600">Upcoming Deadlines</span></div>
+                    <div className="flex items-center gap-2 mb-3"><span className="text-sm">📅</span><span className="text-[10px] font-bold text-indigo-600">Upcoming Events</span></div>
                     <div className="space-y-2">
                       {[{ event: 'Flash Sale', days: '2 days left', status: 'bg-red-100 text-red-700' }, { event: 'Event Registration', days: '5 days left', status: 'bg-amber-100 text-amber-700' }, { event: 'Early Bird Offer', days: '12 days left', status: 'bg-emerald-100 text-emerald-700' }].map((dl) => (
                         <div key={dl.event} className="flex items-center justify-between rounded-lg bg-indigo-50 p-2 text-[10px]">

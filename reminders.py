@@ -88,15 +88,25 @@ def due_items(items: list[dict], sent: dict, ignore_sent: bool = False,
     for item in items:
         if item.get("category") != "deadline":
             continue
+        # Fall back to the event date. Most reels state when the thing happens
+        # and never state an application deadline, so keying only on
+        # deadline_date made the majority of saved events unremindable — the
+        # extractor had the date, the reminder just never looked at it.
         days = days_until(item.get("deadline_date"))
+        is_event = False
+        if days is None:
+            days = days_until(item.get("event_date"))
+            is_event = days is not None
         if days is None or days < 0:
-            continue  # undated, or already closed
+            continue  # undated, or already past
+
+        verb = "starts" if is_event else "closes"
 
         if all_upcoming:
-            label = ("closes today" if days == 0
-                     else "closes tomorrow" if days == 1
+            label = (f"{verb} today" if days == 0
+                     else f"{verb} tomorrow" if days == 1
                      else f"{days} days left")
-            out.append({**item, "_days": days, "_label": label,
+            out.append({**item, "_days": days, "_label": label, "_event": is_event,
                         "_key": f"{item['shortcode']}:digest"})
             continue
 
@@ -106,7 +116,8 @@ def due_items(items: list[dict], sent: dict, ignore_sent: bool = False,
             key = f"{item['shortcode']}:d{threshold}"
             if not ignore_sent and key in sent:
                 continue
-            out.append({**item, "_days": days, "_label": label, "_key": key})
+            out.append({**item, "_days": days, "_label": label,
+                        "_event": is_event, "_key": key})
             break  # only the nearest milestone, never two for one item
 
     out.sort(key=lambda i: i["_days"])
@@ -121,21 +132,25 @@ def format_message(items: list[dict]) -> tuple[str, str, str]:
     if n == 1:
         subject = f"⏰ {items[0]['_label'].capitalize()}: {items[0].get('title')}"
     elif soonest <= 0:
-        subject = f"⏰ {n} deadlines — one closes today"
+        subject = f"⏰ {n} events — one is today"
     else:
-        subject = f"⏰ {n} deadlines coming up"
+        subject = f"⏰ {n} events coming up"
 
     lines, html = [], ["<ul>"]
     for i in items:
-        when = ("closes TODAY" if i["_days"] == 0
-                else "closes tomorrow" if i["_days"] == 1
+        verb = "starts" if i.get("_event") else "closes"
+        when = (f"{verb} TODAY" if i["_days"] == 0
+                else f"{verb} tomorrow" if i["_days"] == 1
                 else f"{i['_days']} days left")
         title = i.get("title") or "Untitled"
         org = i.get("organisation")
 
+        # Show whichever date the countdown was actually computed from.
+        shown = i.get("event_date") if i.get("_event") else i.get("deadline_date")
+
         head = f"• {title}" + (f" — {org}" if org else "")
         lines.append(head)
-        lines.append(f"  {when}  ({i.get('deadline_date')})")
+        lines.append(f"  {when}  ({shown})")
 
         links = i.get("registration_links") or []
         if links:
@@ -147,7 +162,7 @@ def format_message(items: list[dict]) -> tuple[str, str, str]:
 
         html.append(
             f"<li><b>{title}</b>{f' — {org}' if org else ''}<br>"
-            f"<span style='color:#c00'>{when}</span> ({i.get('deadline_date')})<br>"
+            f"<span style='color:#c00'>{when}</span> ({shown})<br>"
             + (f"<a href='{links[0]}'>Apply</a> · " if links else "")
             + f"<a href='{i.get('url')}'>Reel</a></li>"
         )
