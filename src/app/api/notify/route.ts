@@ -47,7 +47,7 @@ if not channels:
                     "TELEGRAM_CHAT_ID to .env, then restart the dev server."}
 else:
     results = notify.send(
-        "ReelBrain test",
+        "ReelInfoga test",
         "If you can read this, notifications are working.",
     )
     out = {

@@ -254,7 +254,7 @@ def to_ics(item: dict, reminder_days: int = 2) -> str:
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//ReelBrain//Deadline//EN",
+        "PRODID:-//ReelInfoga//Deadline//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
         "BEGIN:VEVENT",

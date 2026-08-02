@@ -40,7 +40,7 @@ export function Header() {
                 <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
               </svg>
             </span>
-            <span className="text-base font-bold tracking-tight text-zinc-900">ReelBrain</span>
+            <span className="text-base font-bold tracking-tight text-zinc-900">ReelInfoga</span>
           </Link>
 
           <nav className="hidden items-center gap-1 sm:flex">

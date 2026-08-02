@@ -20,10 +20,10 @@ changes.
 
 ```
 DESKTOP  ┌──────────────────────────────────────────────────────────┐
-         │ ◼ ReelBrain   Analyze  Reels  Map  Saved  History     ⌘K │
+         │ ◼ ReelInfoga   Analyze  Reels  Map  Saved  History     ⌘K │
          └──────────────────────────────────────────────────────────┘
 
-MOBILE   top: ◼ ReelBrain                                    ⌘ search
+MOBILE   top: ◼ ReelInfoga                                    ⌘ search
          bottom: [Analyze] [Reels] [Map] [Saved] [History]
 ```
 

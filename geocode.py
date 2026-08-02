@@ -30,7 +30,7 @@ CACHE = config.OUT / "geocode.json"
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
 
 # Required by the usage policy — an anonymous UA gets 403'd.
-USER_AGENT = "ReelBrain/0.1 (hackathon project; reel-to-map)"
+USER_AGENT = "ReelInfoga/0.1 (hackathon project; reel-to-map)"
 
 MIN_INTERVAL = 1.1          # seconds between requests, per the 1/sec limit
 _last_request = 0.0

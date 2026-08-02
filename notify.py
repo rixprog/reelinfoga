@@ -354,6 +354,6 @@ if __name__ == "__main__":
     import sys
     dry = "--dry-run" in sys.argv
     print("configured channels:", enabled_channels() or "(none)")
-    for r in send("ReelBrain test",
+    for r in send("ReelInfoga test",
                   "If you can read this, the channel works.", dry_run=dry):
         print(f"  {r.channel:<10} {'OK' if r.ok else 'FAIL'}  {r.detail}")

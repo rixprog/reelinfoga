@@ -1,5 +1,5 @@
 // ============================================================
-// ReelBrain — bridge from the Next UI to the Python pipeline
+// ReelInfoga — bridge from the Next UI to the Python pipeline
 // ============================================================
 //
 // `pipeline.py --json` emits one JSON object per line on stdout as it moves

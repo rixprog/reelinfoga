@@ -1,4 +1,4 @@
-# ReelBrain — Full Plan
+# ReelInfoga — Full Plan
 
 **Scope for this document:** the whole product's architecture, with the **Food Spot**
 vertical designed end-to-end. Other verticals (Jobs, Recipes, Travel, Products, Events)
@@ -48,7 +48,7 @@ better architecture.
 
 ```
 ┌──────────────┐
-│  Instagram   │  user taps Share → "ReelBrain"  (Web Share Target API)
+│  Instagram   │  user taps Share → "ReelInfoga"  (Web Share Target API)
 │  app / web   │  or pastes URL into the app
 └──────┬───────┘
        │  POST /api/ingest  {url}
@@ -103,7 +103,7 @@ credentials.
 
 ```json
 {
-  "name": "ReelBrain",
+  "name": "ReelInfoga",
   "share_target": {
     "action": "/share",
     "method": "GET",
@@ -112,8 +112,8 @@ credentials.
 }
 ```
 
-Once the PWA is installed on Android, **ReelBrain appears in Instagram's native share
-sheet.** Tap share → ReelBrain → done. That single flow is the demo's opening beat and
+Once the PWA is installed on Android, **ReelInfoga appears in Instagram's native share
+sheet.** Tap share → ReelInfoga → done. That single flow is the demo's opening beat and
 it costs about 20 lines of config. iOS Safari doesn't support Web Share Target — iOS
 users paste the URL (and the native app in Phase 2 gets a proper Share Extension).
 

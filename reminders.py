@@ -287,7 +287,7 @@ def main() -> int:
 
     if args.test:
         print("configured channels:", notify.enabled_channels() or "(none)")
-        for r in notify.send("ReelBrain test",
+        for r in notify.send("ReelInfoga test",
                              "If you can read this, the channel works.",
                              dry_run=args.dry_run):
             print(f"  {r.channel:<10} {'OK' if r.ok else 'FAIL'}  {r.detail}")

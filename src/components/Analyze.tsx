@@ -306,7 +306,7 @@ export function Analyze() {
                 <div className="h-full w-full overflow-hidden rounded-[28px] bg-zinc-900 text-white flex flex-col justify-between p-2.5">
                   
                   <div className="flex items-center justify-between text-[9px] text-zinc-400 border-b border-zinc-800 pb-1">
-                    <span className="font-semibold text-purple-300">ReelBrain AI</span>
+                    <span className="font-semibold text-purple-300">ReelInfoga AI</span>
                     <span className="text-emerald-400 font-bold">100% Analyzed</span>
                   </div>
 
@@ -334,7 +334,7 @@ export function Analyze() {
                   </div>
 
                   <div className="bg-[#8B5CF6] py-1.5 rounded-xl text-center text-[9px] font-semibold text-white">
-                    Saved to ReelBrain
+                    Saved to ReelInfoga
                   </div>
                 </div>
               </div>
@@ -1350,7 +1350,7 @@ export function Analyze() {
                       <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
                     </svg>
                   </span>
-                  <span className="text-lg font-bold tracking-tight text-zinc-900">ReelBrain</span>
+                  <span className="text-lg font-bold tracking-tight text-zinc-900">ReelInfoga</span>
                 </div>
                 <p className="text-sm leading-relaxed text-zinc-500 max-w-xs">
                   AI-powered Instagram intelligence. Turn saved reels into searchable recipes, locations, transcripts, and actionable deadlines.
@@ -1410,7 +1410,7 @@ export function Analyze() {
             <div className="mt-12 pt-6 border-t border-zinc-100">
               <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
                 <p className="text-xs text-zinc-400">
-                  © 2026 ReelBrain. All rights reserved.
+                  © 2026 ReelInfoga. All rights reserved.
                 </p>
                 <p className="text-xs text-zinc-400">
                   Made with <span className="text-rose-500">❤️</span> by Team Yukti

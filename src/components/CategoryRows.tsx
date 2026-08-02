@@ -57,7 +57,7 @@ export function CategoryRows() {
           Recently Analyzed
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-zinc-500 max-w-md mx-auto">
-          Every reel you run through ReelBrain, sorted into its category with the details already
+          Every reel you run through ReelInfoga, sorted into its category with the details already
           pulled out.
         </p>
       </div>

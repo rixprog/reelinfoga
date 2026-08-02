@@ -1,6 +1,6 @@
-# ReelBrain
+# ReelInfoga
 
-Paste an Instagram reel link. ReelBrain watches the video, reads the text burned into
+Paste an Instagram reel link. ReelInfoga watches the video, reads the text burned into
 the frames, listens to the audio (Malayalam / Tamil / Hindi / English, usually
 code-mixed), reads the caption and comments — then extracts what actually matters and
 makes it searchable, mappable and actionable.

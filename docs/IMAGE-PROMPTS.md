@@ -53,7 +53,7 @@ Calendar**. Those are dark, dense, restrained, and unmistakably designed by peop
 High-fidelity Android app UI design, dark theme, portrait 1080x2400, flat straight-on
 screen only — no device frame, no hands, no perspective.
 
-App: "ReelBrain". It saves Instagram reels and extracts the useful information.
+App: "ReelInfoga". It saves Instagram reels and extracts the useful information.
 
 HOME = AN INBOX of unread saved reels. The user processes them: act, or archive.
 Header: "Inbox" in large white text, with a small grey "6 unread" beside it.
@@ -95,7 +95,7 @@ text sizes, lorem ipsum.
 High-fidelity Android app UI design, dark theme, portrait 1080x2400, flat straight-on
 screen only — no device frame, no hands, no perspective.
 
-App: "ReelBrain". It saves Instagram reels and extracts the useful information.
+App: "ReelInfoga". It saves Instagram reels and extracts the useful information.
 
 HOME = A FILTERABLE GRID of everything saved.
 Header: "Library" large and white. Beneath it a subtle search field with a thin
@@ -138,7 +138,7 @@ text sizes, lorem ipsum.
 High-fidelity Android app UI design, dark theme, portrait 1080x2400, flat straight-on
 screen only — no device frame, no hands, no perspective.
 
-App: "ReelBrain". It saves Instagram reels and extracts the useful information.
+App: "ReelInfoga". It saves Instagram reels and extracts the useful information.
 
 HOME = A FULL-BLEED MAP, edge to edge, no header.
 A dark desaturated map of the Kerala/Chennai region: muted grey-green terrain, darker
@@ -177,7 +177,7 @@ frosted blur, bright saturated map tiles, a different colour per category, lorem
 High-fidelity Android app UI design, dark theme, portrait 1080x2400, flat straight-on
 screen only — no device frame, no hands, no perspective.
 
-App: "ReelBrain". It saves Instagram reels and extracts the useful information.
+App: "ReelInfoga". It saves Instagram reels and extracts the useful information.
 
 HOME = A TIMELINE organised by WHEN THINGS MATTER, not when they were saved.
 Header: "Today" large and white, with "Tuesday, 4 August" small and grey beneath it.
@@ -229,7 +229,7 @@ text sizes, lorem ipsum.
 High-fidelity Android app UI design, dark theme, portrait 1080x2400, flat straight-on
 screen only — no device frame, no hands, no perspective.
 
-App: "ReelBrain". It saves Instagram reels and extracts the useful information.
+App: "ReelInfoga". It saves Instagram reels and extracts the useful information.
 
 HOME = AUTO-BUILT COLLECTIONS. Shelves the app filled for you; the user never files
 anything.

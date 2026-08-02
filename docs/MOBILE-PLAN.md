@@ -1,4 +1,4 @@
-# ReelBrain Mobile — thin client plan
+# ReelInfoga Mobile — thin client plan
 
 > **Scope rule for this phase: the site code is not touched.**
 > No edits to `src/`, no edits to the API routes, no new backend service. The
@@ -38,7 +38,7 @@ browser, so it does not enforce CORS. No headers to add, no middleware, no confi
 │  Instagram            │        │  npm run dev  :3000          │
 │    ⋮ Share            │        │    ├── /api/*  route handlers│
 │      ↓                │  wifi  │    └── spawns pipeline.py    │
-│  ReelBrain (Expo)     │ ─────► │                              │
+│  ReelInfoga (Expo)     │ ─────► │                              │
 │    · share intent     │  HTTP  │  python: extraction, search, │
 │    · library          │ ◄───── │          trip planning       │
 │    · search           │        │                              │
@@ -155,7 +155,7 @@ joined. Accept the data cost, it always works. Worth one rehearsal.
 Unchanged from the previous plan, because this part was never about architecture:
 
 ```
-in Instagram → Share → ReelBrain → dismissed immediately
+in Instagram → Share → ReelInfoga → dismissed immediately
    ↓  (POST /api/analyze, phone stops caring)
 laptop processes ~40s
    ↓
@@ -211,4 +211,4 @@ Instagram app, and a real tap. Same for geofencing.
 
 So the honest split: I can write it and prove the API layer works end to end against
 the real backend; you have to run the build and confirm the share sheet actually shows
-ReelBrain. Expect one round of fixes there.
+ReelInfoga. Expect one round of fixes there.

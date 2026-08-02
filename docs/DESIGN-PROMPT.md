@@ -14,7 +14,7 @@ Two notes before you do:
 
 ```
 You are a senior product designer. Design the complete mobile UI for an app called
-ReelBrain. Output high-fidelity mobile screens (iPhone 15 / Android, 1179x2556),
+ReelInfoga. Output high-fidelity mobile screens (iPhone 15 / Android, 1179x2556),
 dark theme, production quality — not wireframes.
 
 ═══════════════════════════════════════════════════════════════
@@ -25,7 +25,7 @@ People save hundreds of Instagram reels and never see them again. Their saved fo
 is a graveyard: a biryani place they meant to visit, an internship that closed last
 week, a Wayanad itinerary they forgot about.
 
-ReelBrain watches, listens to and reads every reel you share to it, then extracts what
+ReelInfoga watches, listens to and reads every reel you share to it, then extracts what
 actually matters — the restaurant and where it is, the application deadline and its
 registration link, the recipe's ingredients and steps, the products and their prices —
 and brings it back at the moment you need it.
@@ -34,7 +34,7 @@ The user is Indian, 18–30, on a mid-range Android phone. Content is code-mixed
 (Malayalam, Tamil, Hindi, English). Prices are in ₹.
 
 THE CORE LOOP — design around this, not around a form:
-  1. User is inside Instagram. Taps Share → ReelBrain. App does NOT open.
+  1. User is inside Instagram. Taps Share → ReelInfoga. App does NOT open.
   2. ~40 seconds later: a push notification. "Saved: Al Faham, Kozhikode."
   3. Days later they search for it, or walk near it and the phone buzzes.
 
@@ -116,7 +116,7 @@ they were saved.
 
 ── 2. LIBRARY — EMPTY STATE ───────────────────────────────────
 The most important screen in the app: it must teach the share gesture. Show a small
-mock of Instagram's share sheet with ReelBrain in it, an arrow, and one line:
+mock of Instagram's share sheet with ReelInfoga in it, an arrow, and one line:
 "Share any reel here. We'll do the rest." Warm, not apologetic.
 
 ── 3. REEL DETAIL — FOOD SPOT ─────────────────────────────────
@@ -194,7 +194,7 @@ Empty state should read as good news, not as a broken screen.
 
 ── 12. ONBOARDING (3 screens) ─────────────────────────────────
 1. The problem, shown not told: a scroll of saved reels going grey.
-2. The gesture: Instagram share sheet → ReelBrain.
+2. The gesture: Instagram share sheet → ReelInfoga.
 3. Permissions, each with an honest one-line reason:
    notifications ("so we can tell you before a deadline closes"),
    location ("so we can nudge you when you're near a place you saved").

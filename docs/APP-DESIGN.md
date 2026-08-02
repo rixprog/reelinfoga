@@ -70,9 +70,9 @@ Each is self-contained. Same visual language throughout.
 High-fidelity Android app UI design, portrait 1080x2400, LIGHT theme, flat straight-on
 screen — no device frame, no hands, no perspective.
 
-App: "ReelBrain" — it saves Instagram reels and extracts the useful information.
+App: "ReelInfoga" — it saves Instagram reels and extracts the useful information.
 
-Top: small violet rounded-square logo mark and the word "ReelBrain" left-aligned, a
+Top: small violet rounded-square logo mark and the word "ReelInfoga" left-aligned, a
 thin bell icon on the right. Below, a large heading "Your saved reels" in near-black,
 and a grey subtitle "32 reels, filed for you".
 Then a pill-shaped search field, white with a hairline border and a thin magnifier
@@ -113,7 +113,7 @@ Crisp, modern, professional — like Airbnb or Things 3, not a template dashboar
 High-fidelity Android app UI design, portrait 1080x2400, LIGHT theme, flat straight-on
 screen — no device frame, no hands, no perspective.
 
-App: "ReelBrain". This is the detail screen for one saved reel.
+App: "ReelInfoga". This is the detail screen for one saved reel.
 
 Top 38% of the screen: a full-bleed PHOTOGRAPH of a plated chicken biryani, with a
 soft dark gradient at the top holding a white circular back arrow on the left and a
@@ -157,7 +157,7 @@ Crisp, modern, professional — like Airbnb listing detail.
 High-fidelity Android app UI design, portrait 1080x2400, LIGHT theme, flat straight-on
 screen — no device frame, no hands, no perspective.
 
-App: "ReelBrain" search screen, keyboard dismissed.
+App: "ReelInfoga" search screen, keyboard dismissed.
 
 Top: a pill-shaped white search field with a hairline border, containing a thin
 magnifier icon and the typed text "that biryani recipe", with a small clear (x) icon
@@ -196,7 +196,7 @@ lorem ipsum.
 High-fidelity Android app UI design, portrait 1080x2400, LIGHT theme, flat straight-on
 screen — no device frame, no hands, no perspective.
 
-App: "ReelBrain" map screen.
+App: "ReelInfoga" map screen.
 
 A full-bleed LIGHT map of the Chennai / Kerala region — soft grey roads, pale green
 parks, light water, thin grey place labels. Clean and desaturated, like Google Maps
@@ -233,7 +233,7 @@ lorem ipsum.
 High-fidelity Android app UI design, portrait 1080x2400, LIGHT theme, flat straight-on
 screen — no device frame, no hands, no perspective.
 
-App: "ReelBrain" alerts screen.
+App: "ReelInfoga" alerts screen.
 
 Top: large bold heading "Alerts", grey subtitle "Tuesday, 4 August".
 

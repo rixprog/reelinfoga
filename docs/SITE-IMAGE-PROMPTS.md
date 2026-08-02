@@ -21,10 +21,10 @@ spacing rhythm** — not letterforms.
 High-fidelity web app UI design, LIGHT theme, desktop 1440x1024, flat straight-on
 screen — no browser chrome, no device frame, no hands, no perspective.
 
-App: "ReelBrain". Paste an Instagram reel link and it extracts what matters.
+App: "ReelInfoga". Paste an Instagram reel link and it extracts what matters.
 
 Top: a thin white sticky nav, 56px, hairline bottom border. Left: a small violet
-rounded-square logo mark and the wordmark "ReelBrain". Then five plain text links —
+rounded-square logo mark and the wordmark "ReelInfoga". Then five plain text links —
 Analyze, Reels, Map, Saved, History — where "Analyze" is active, marked ONLY by a 2px
 violet underline beneath it. Right: a small magnifier icon with a faint "⌘K" chip.
 
@@ -77,9 +77,9 @@ uniform text sizes, lorem ipsum.
 High-fidelity web app UI design, LIGHT theme, desktop 1440x1024, flat straight-on
 screen — no browser chrome, no device frame, no hands, no perspective.
 
-App: "ReelBrain" — the saved-reels library.
+App: "ReelInfoga" — the saved-reels library.
 
-Top: the same thin white sticky nav — violet logo mark, "ReelBrain", then Analyze,
+Top: the same thin white sticky nav — violet logo mark, "ReelInfoga", then Analyze,
 Reels, Map, Saved, History as plain text links, with "Reels" active and marked ONLY
 by a 2px violet underline.
 
@@ -129,7 +129,7 @@ with a border AND a shadow AND a tint, centred symmetrical layouts, lorem ipsum.
 High-fidelity web app UI design, LIGHT theme, desktop 1440x1024, flat straight-on
 screen — no browser chrome, no device frame, no perspective.
 
-App: "ReelBrain" — the detail view for one saved food reel. Same thin white nav at
+App: "ReelInfoga" — the detail view for one saved food reel. Same thin white nav at
 top (Analyze, Reels, Map, Saved, History), no item underlined since this is a pushed
 screen; a small "← Reels" text link sits below the nav.
 
@@ -175,7 +175,7 @@ Reference: Airbnb listing detail, Linear, Things 3.
 High-fidelity web app UI design, LIGHT theme, desktop 1440x1024, flat straight-on
 screen — no browser chrome, no device frame, no perspective.
 
-App: "ReelBrain" — the map of everything saved that has a location. Same thin white
+App: "ReelInfoga" — the map of everything saved that has a location. Same thin white
 nav at top with "Map" active, marked by a 2px violet underline.
 
 Below the nav, a FULL-BLEED light map filling the rest of the screen: southern India,
@@ -212,7 +212,7 @@ Avoid additionally: dark map tiles, bright saturated map colours, emoji pins.
 High-fidelity web app UI design, LIGHT theme, desktop 1440x1024, flat straight-on
 screen — no browser chrome, no device frame, no perspective.
 
-App: "ReelBrain" — the processing log. Same thin white nav with "History" active,
+App: "ReelInfoga" — the processing log. Same thin white nav with "History" active,
 marked by a 2px violet underline.
 
 A single column about 860px wide, left-aligned:
@@ -253,7 +253,7 @@ Two high-fidelity mobile app screens side by side, LIGHT theme, each 390x844, fl
 straight-on, no device frames, no hands, no perspective.
 
 Both share: a thin white top bar with a small violet rounded-square logo mark and the
-wordmark "ReelBrain"; and a white BOTTOM TAB BAR with five thin line icons and small
+wordmark "ReelInfoga"; and a white BOTTOM TAB BAR with five thin line icons and small
 labels — Analyze, Reels, Map, Saved, History — the active one tinted violet with a
 2px violet underline beneath its label. NO EMOJI, line icons only.
 

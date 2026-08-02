@@ -9,7 +9,7 @@ You are a senior product designer. You will design screens for a real, working
 web product. Read this brief fully before designing anything.
 
 ═══════════════════════════════════════════════════════════
-THE PRODUCT — ReelBrain
+THE PRODUCT — ReelInfoga
 ═══════════════════════════════════════════════════════════
 
 People save hundreds of Instagram reels and never see them again. Their saved
@@ -17,7 +17,7 @@ folder is a graveyard: a biryani place they meant to try, an internship that
 closed last week, a Wayanad itinerary they forgot about, a recipe they'll never
 find again.
 
-ReelBrain takes a reel link, watches the video, reads the text burned into the
+ReelInfoga takes a reel link, watches the video, reads the text burned into the
 frames, listens to the audio (Malayalam / Tamil / Hindi / English, usually
 code-mixed), reads the caption and comments — and extracts what actually matters.
 Then it makes that searchable, mappable and actionable.

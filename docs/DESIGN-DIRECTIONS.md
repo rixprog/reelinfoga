@@ -40,7 +40,7 @@ Paste **Part 1** every time. Then paste **one** direction from Part 2. Then Part
 
 ```
 You are a senior product designer. Design high-fidelity Android screens (1080x2400,
-dark theme, production quality — not wireframes) for an app called ReelBrain.
+dark theme, production quality — not wireframes) for an app called ReelInfoga.
 
 THE PROBLEM
 People save hundreds of Instagram reels and never see them again. The saved folder is
@@ -60,7 +60,7 @@ reads the on-screen text and the comments, and extracts what actually matters:
                  key points + complexity + LeetCode problem numbers)
 
 THE CAPTURE FLOW — design around this, not around a form
-  1. User is inside Instagram. Taps Share → ReelBrain. The app does NOT open.
+  1. User is inside Instagram. Taps Share → ReelInfoga. The app does NOT open.
   2. ~40 seconds of processing happens on a server.
   3. The reel appears in the app. The user comes back to it later — or never, until
      the app surfaces it.
