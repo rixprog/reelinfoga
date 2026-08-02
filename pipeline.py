@@ -234,7 +234,12 @@ def process(url: str, *, keyframes: int | None = None,
     if ics_path:
         log(f"      calendar file → {ics_path}")
 
-    if config.NOTIFY_ON_SAVE:
+    # Events always notify, whatever NOTIFY_ON_SAVE says. Not missing the thing
+    # is the entire reason you saved it, and most events carry no application
+    # deadline for the daily reminder job to key on — so without this an undated
+    # event is saved and then never mentioned again. Other categories stay
+    # behind the flag: a buzz per saved restaurant is noise.
+    if config.NOTIFY_ON_SAVE or spot.category == "deadline":
         import notify
         for r in notify.notify_saved(record):
             log(f"      notify {r.channel}: {'OK' if r.ok else 'FAIL ' + r.detail}")
