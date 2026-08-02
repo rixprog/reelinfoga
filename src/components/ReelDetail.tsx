@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { PlaceMap } from './PlaceMap';
 import { Card, Empty, Eyebrow, Pill } from './Shell';
+import { StoreLinks } from './StoreLinks';
 import { ReelPlayer } from './ReelPlayer';
 import { Thumb } from './Thumb';
 import { starred } from '@/lib/collections';
@@ -122,7 +123,24 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
                 <Pill tone={conf.tone}>{conf.label} confidence</Pill>
               )}
               {item.category === 'deadline' && <Pill tone={cd.tone}>{cd.text}</Pill>}
+              {/* Skipped when it just repeats the title, which it often does. */}
+              {p.product_category &&
+                String(p.product_category).toLowerCase() !==
+                  String(item.title ?? '').toLowerCase() && (
+                  <Pill>{String(p.product_category)}</Pill>
+                )}
+              {p.cuisine && <Pill>{String(p.cuisine)}</Pill>}
+              {item.language && <Pill>{item.language.toUpperCase()}</Pill>}
             </div>
+
+            {/* The model already writes a one-line summary of every reel for the
+                search index; it was never shown, which left the top of the page
+                a title and nothing else. */}
+            {typeof p.search_summary === 'string' && p.search_summary && (
+              <p className="mt-4 text-[15px] leading-relaxed text-zinc-600">
+                {p.search_summary}
+              </p>
+            )}
           </div>
 
           {facts.length > 0 && (
@@ -240,11 +258,28 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
                 {p.products.map((pr: any) => (
                   <Card key={pr.name} className="p-4">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold">{pr.name}</p>
+                      <div className="min-w-0">
+                        {pr.brand && (
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                            {pr.brand}
+                          </p>
+                        )}
+                        <p className="font-semibold">{pr.name}</p>
+                      </div>
                       <span className="tnum shrink-0 text-sm font-semibold text-[#15803D]">
                         {pr.price_inr ? inr(pr.price_inr) : (pr.price_text ?? '—')}
                       </span>
                     </div>
+
+                    {typeof pr.rating_out_of_5 === 'number' && (
+                      <p className="mt-1.5 text-xs text-[#B45309]">
+                        {'★'.repeat(Math.round(pr.rating_out_of_5))}
+                        <span className="text-zinc-300">
+                          {'★'.repeat(5 - Math.round(pr.rating_out_of_5))}
+                        </span>
+                        <span className="ml-1.5 text-zinc-500">{pr.rating_out_of_5}/5</span>
+                      </p>
+                    )}
                     <dl className="mt-3 space-y-1 text-xs">
                       {(pr.specs ?? []).map((sp: any) => (
                         <div key={sp.label} className="flex justify-between gap-2">
@@ -259,29 +294,34 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
                     {(pr.cons ?? []).map((x: string) => (
                       <p key={x} className="mt-1 text-xs text-[#B91C1C]">− {x}</p>
                     ))}
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      <a
-                        href={`https://www.amazon.in/s?k=${encodeURIComponent(pr.name)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-primary"
-                      >
-                        Amazon ↗
-                      </a>
-                      <a
-                        href={`https://www.flipkart.com/search?q=${encodeURIComponent(pr.name)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-primary"
-                      >
-                        Flipkart ↗
-                      </a>
+                    {pr.best_for && (
+                      <p className="mt-3 rounded-lg bg-zinc-50 p-2.5 text-xs leading-relaxed text-zinc-600">
+                        <span className="font-semibold text-zinc-500">Best for: </span>
+                        {pr.best_for}
+                      </p>
+                    )}
+
+                    <div className="mt-3 border-t border-zinc-100 pt-3">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                        Where to buy
+                      </p>
+                      <StoreLinks
+                        query={[pr.brand, pr.name].filter(Boolean).join(' ')}
+                      />
                     </div>
                   </Card>
                 ))}
               </div>
+              {typeof p.verdict === 'string' && p.verdict && (
+                <Card className="mt-3 p-4" edge="#7C3AED">
+                  <Eyebrow>The verdict</Eyebrow>
+                  <p className="mt-1.5 text-sm leading-relaxed text-zinc-700">{p.verdict}</p>
+                </Card>
+              )}
+
               <p className="mt-2 text-xs text-ink-faint">
-                Store buttons open a search for that model — we don&apos;t guess product URLs.
+                Store links open a search for that model — the reels carry no URLs, and a
+                guessed product link that 404s is worse than an honest search.
               </p>
             </div>
           )}
