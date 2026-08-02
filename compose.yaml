@@ -2,7 +2,13 @@ services:
   reelbrain:
     build: .
     ports:
-      - "3000:3000"
+      # Set HOST_PORT in .env if 3000 is taken. On Windows it can be unavailable
+      # even with nothing listening, because Hyper-V reserves port ranges.
+      #
+      # Deliberately not named PORT: env_file also injects it into the container,
+      # and `next start` reads PORT — so PORT=3001 would move the server off 3000
+      # and break the mapping that is trying to reach it.
+      - "${HOST_PORT:-3000}:3000"
     # Keys are read at runtime, never baked into the image. Requires a .env —
     # copy .env.example first.
     env_file:
