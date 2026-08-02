@@ -26,6 +26,15 @@ export const CATEGORY_ORDER: CategoryKey[] = [
 
 export const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
+/**
+ * Stable identity for a map pin, shared by the list rail and the map itself.
+ *
+ * Lives here rather than beside the map so the rail can import it without
+ * pulling Leaflet into the server bundle — LocationMap touches `window` at
+ * module scope, which is why it is loaded with ssr: false.
+ */
+export const placeKey = (p: { name: string }, n: number) => `${p.name}-${n}`;
+
 export function daysUntil(iso?: string | null): number | null {
   if (!iso) return null;
   const t = new Date(`${iso}T00:00:00`).getTime();

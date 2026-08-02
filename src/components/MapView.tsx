@@ -2,12 +2,12 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Empty, Eyebrow } from './Shell';
 import { Thumb } from './Thumb';
 import type { SavedItem } from '@/lib/store-client';
-import { categoryOf } from '@/lib/ui';
+import { categoryOf, placeKey } from '@/lib/ui';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -66,6 +66,13 @@ export function MapView() {
   const [filter, setFilter] = useState<'all' | 'food_spot' | 'travel'>('all');
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const rows = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Selection also arrives from the map, where the matching row may be far down
+  // a 300-item rail; without this the highlight lands off-screen.
+  useEffect(() => {
+    if (active) rows.current[active]?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
 
   useEffect(() => {
     // /api/places geocodes only — no language model. Calling the trip planner
@@ -121,29 +128,42 @@ export function MapView() {
           <Eyebrow>{places.length} places</Eyebrow>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {places.map((p, n) => (
-            <button
-              key={`${p.name}-${n}`}
-              onClick={() => setActive(`${p.name}-${n}`)}
-              className={`flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left transition hover:bg-background ${
-                active === `${p.name}-${n}` ? 'bg-primary-soft/40' : ''
-              }`}
-            >
-              <span
-                className="grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white"
-                style={{ background: categoryOf(p.category).ink }}
+          {places.map((p, n) => {
+            const key = placeKey(p, n);
+            const on = active === key;
+            return (
+              <button
+                key={key}
+                ref={(el) => {
+                  rows.current[key] = el;
+                }}
+                // Re-clicking the active row deselects, so the same control that
+                // flew you somewhere also gets you back out.
+                onClick={() => setActive(on ? null : key)}
+                className={`flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left transition hover:bg-background ${
+                  on ? 'bg-primary-soft/40' : ''
+                }`}
               >
-                {n + 1}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{p.name}</span>
-                <span className="block truncate text-xs text-ink-muted">
-                  {p.sub}
-                  {p.approximate && ' · approximate'}
+                <span
+                  className="grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white transition-transform"
+                  style={{
+                    background: categoryOf(p.category).ink,
+                    transform: on ? 'scale(1.15)' : undefined,
+                  }}
+                >
+                  {n + 1}
                 </span>
-              </span>
-            </button>
-          ))}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold">{p.name}</span>
+                  <span className="block truncate text-xs text-ink-muted">
+                    {p.sub}
+                    {p.approximate && ' · approximate'}
+                  </span>
+                </span>
+                <Thumb shortcode={p.shortcode} category={p.category} size={36} />
+              </button>
+            );
+          })}
         </div>
       </aside>
 
