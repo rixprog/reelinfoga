@@ -2,12 +2,12 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Card, Empty, Eyebrow, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import type { SavedItem } from '@/lib/store-client';
-import { categoryOf } from '@/lib/ui';
+import { categoryOf, placeKey } from '@/lib/ui';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -66,6 +66,13 @@ export function MapView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const rows = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Selection also arrives from the map, where the matching row may be far down
+  // a 300-item rail; without this the highlight lands off-screen.
+  useEffect(() => {
+    if (active) rows.current[active]?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
 
   useEffect(() => {
     Promise.all([
@@ -121,6 +128,7 @@ export function MapView() {
           <p className="mt-3 text-sm sm:text-base leading-relaxed text-zinc-600">
             Explore every restaurant, café, hotel, and landmark extracted from your Instagram reels on a visual map.
           </p>
+
 
           {/* Floating Badges */}
           <div className="mt-6 flex flex-wrap gap-2">

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { CategoryRows } from './CategoryRows';
 import { Card, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import { categoryOf, countdown, daysUntil } from '@/lib/ui';
@@ -645,6 +646,13 @@ export function Analyze() {
           ))}
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          3b. LIBRARY — a row of reel cards per category. Renders nothing
+          until something has been analyzed, so a first run still reads as
+          a landing page rather than a wall of empty shelves.
+         ═══════════════════════════════════════════════════════════════ */}
+      <CategoryRows />
 
       {/* ═══════════════════════════════════════════════════════════════
           4. MAP PREVIEW — Dashboard layout with illustration
