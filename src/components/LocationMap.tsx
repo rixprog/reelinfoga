@@ -79,14 +79,49 @@ function ClearOnBlankClick({ onClear }: { onClear: () => void }) {
   return null;
 }
 
+/** Pulsing blue dot for the phone's live position — deliberately unlike a pin. */
+const liveIcon = () =>
+  L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:18px;height:18px">
+      <div style="
+        position:absolute;inset:0;border-radius:50%;
+        background:#2563EB;border:2.5px solid #fff;
+        box-shadow:0 1px 6px rgba(0,0,0,.35);
+      "></div>
+      <div style="
+        position:absolute;left:-11px;top:-11px;width:40px;height:40px;
+        border-radius:50%;background:rgba(37,99,235,.25);
+        animation:rb-ping 1.8s cubic-bezier(0,0,.2,1) infinite;
+      "></div>
+    </div>
+    <style>@keyframes rb-ping{0%{transform:scale(.4);opacity:.8}80%,100%{transform:scale(1);opacity:0}}</style>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+
+/** Keeps the live dot in frame without wrenching the map away from the user. */
+function FollowLive({ live }: { live: { lat: number; lon: number } | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!live) return;
+    if (!map.getBounds().contains([live.lat, live.lon])) {
+      map.panTo([live.lat, live.lon], { animate: true });
+    }
+  }, [live, map]);
+  return null;
+}
+
 export default function LocationMap({
   places,
   active,
   onSelect,
+  live = null,
 }: {
   places: Place[];
   active: string | null;
   onSelect: (k: string | null) => void;
+  live?: { lat: number; lon: number } | null;
 }) {
   const markers = useRef<Record<string, L.Marker | null>>({});
   const clear = useCallback(() => onSelect(null), [onSelect]);
@@ -165,8 +200,15 @@ export default function LocationMap({
           </Marker>
         );
       })}
+      {live && (
+        <Marker position={[live.lat, live.lon]} icon={liveIcon()} zIndexOffset={2000}>
+          <Popup>You are here</Popup>
+        </Marker>
+      )}
+
       <Fit places={places} />
       <FlyToActive places={places} active={active} markers={markers} />
+      <FollowLive live={live} />
       <ClearOnBlankClick onClear={clear} />
     </MapContainer>
   );

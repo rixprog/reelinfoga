@@ -7,7 +7,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Empty, Eyebrow, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import type { SavedItem } from '@/lib/store-client';
+import { formatDistance, metresBetween } from '@/lib/geo';
 import { categoryOf, placeKey } from '@/lib/ui';
+import { RELAY_URL, useLiveLocation } from '@/lib/use-live-location';
+
+/** Alert when the phone comes within this of a saved place. */
+const NEAR_M = 300;
+/** Must get this far away before the same place can alert again. */
+const CLEAR_M = 450;
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -66,7 +73,13 @@ export function MapView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [active, setActive] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tracking, setTracking] = useState(false);
+  const [alert, setAlert] = useState<{ name: string; sub: string; metres: number; key: string } | null>(null);
   const rows = useRef<Record<string, HTMLButtonElement | null>>({});
+  /** Places already announced, cleared once the phone moves back out of range. */
+  const announced = useRef<Set<string>>(new Set());
+
+  const { position: live, status: relay } = useLiveLocation(tracking);
 
   // Selection also arrives from the map, where the matching row may be far down
   // a 300-item rail; without this the highlight lands off-screen.
@@ -87,23 +100,59 @@ export function MapView() {
       .finally(() => setLoading(false));
   }, []);
 
-  const places = useMemo(() => {
-    const all = [...geo, ...toPlaces(items)];
+  /** Every located place, before the UI filters. Proximity watches this list —
+      alerts driven off the filtered one would go quiet the moment you typed in
+      the search box, which is the opposite of what a proximity alert is for. */
+  const allPlaces = useMemo(() => {
     const seen = new Set<string>();
-    return all
-      .filter((p) => {
-        const k = `${p.name}|${p.lat.toFixed(4)}`;
-        if (seen.has(k)) return false;
-        seen.add(k);
-        return true;
-      })
-      .filter((p) => filter === 'all' || p.category === filter)
-      .filter((p) => {
-        if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return p.name.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q);
-      });
-  }, [items, geo, filter, searchQuery]);
+    return [...geo, ...toPlaces(items)].filter((p) => {
+      const k = `${p.name}|${p.lat.toFixed(4)}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [items, geo]);
+
+  const places = useMemo(
+    () =>
+      allPlaces
+        .filter((p) => filter === 'all' || p.category === filter)
+        .filter((p) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return p.name.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q);
+        }),
+    [allPlaces, filter, searchQuery],
+  );
+
+  // Proximity watch. Hysteresis (NEAR_M in, CLEAR_M out) stops a place that you
+  // are sitting right on top of from re-alerting on every GPS jitter frame.
+  useEffect(() => {
+    if (!live) return;
+    let nearest: { p: (typeof allPlaces)[number]; d: number; key: string } | null = null;
+
+    allPlaces.forEach((p, n) => {
+      const d = metresBetween({ lat: live.lat, lon: live.lon }, { lat: p.lat, lon: p.lon });
+      const key = placeKey(p, n);
+      if (d > CLEAR_M) announced.current.delete(key);
+      if (d <= NEAR_M && !announced.current.has(key)) {
+        if (!nearest || d < nearest.d) nearest = { p, d, key };
+      }
+    });
+
+    if (nearest) {
+      const hit = nearest as { p: (typeof allPlaces)[number]; d: number; key: string };
+      announced.current.add(hit.key);
+      setAlert({ name: hit.p.name, sub: hit.p.sub, metres: hit.d, key: hit.key });
+    }
+  }, [live, allPlaces]);
+
+  // Auto-dismiss, but keyed on the alert so a new one restarts the clock.
+  useEffect(() => {
+    if (!alert) return;
+    const t = setTimeout(() => setAlert(null), 9000);
+    return () => clearTimeout(t);
+  }, [alert]);
 
   if (loading) {
     return (
@@ -187,10 +236,16 @@ export function MapView() {
             ) : (
               places.map((p, n) => (
                 <button
-                  key={`${p.name}-${n}`}
-                  onClick={() => setActive(`${p.name}-${n}`)}
+                  key={placeKey(p, n)}
+                  // Registers the row so a marker click can scroll it into view.
+                  // Without the ref the effect above has nothing to look up and
+                  // the map-to-rail half of the sync silently does nothing.
+                  ref={(el) => {
+                    rows.current[placeKey(p, n)] = el;
+                  }}
+                  onClick={() => setActive(placeKey(p, n))}
                   className={`w-full text-left rounded-xl p-3 border transition flex items-center gap-3 ${
-                    active === `${p.name}-${n}`
+                    active === placeKey(p, n)
                       ? 'bg-violet-50/90 border-violet-300 shadow-sm'
                       : 'bg-white border-zinc-100 hover:border-zinc-200'
                   }`}
@@ -219,7 +274,76 @@ export function MapView() {
 
         {/* Right Map View */}
         <div className="relative flex-1 min-h-[400px] lg:min-h-[560px]">
-          <LocationMap places={places} active={active} onSelect={setActive} />
+          <LocationMap places={places} active={active} onSelect={setActive} live={live} />
+
+          {/* Live tracking toggle. Off by default — the relay only runs on the
+              demo machine, so auto-connecting would retry a dead socket.
+              Top-right because Leaflet's zoom control owns the top-left. */}
+          <div className="absolute right-3 top-3 z-[500] flex items-center gap-2">
+            <button
+              onClick={() => setTracking((t) => !t)}
+              className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-md transition ${
+                tracking
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-zinc-700 hover:bg-zinc-50 border border-zinc-200'
+              }`}
+              title={RELAY_URL}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  relay === 'live'
+                    ? 'bg-emerald-400 animate-pulse'
+                    : relay === 'connecting'
+                      ? 'bg-amber-400 animate-pulse'
+                      : relay === 'error'
+                        ? 'bg-red-400'
+                        : 'bg-zinc-400'
+                }`}
+              />
+              {tracking ? 'Live location' : 'Track me'}
+            </button>
+            {tracking && relay !== 'live' && (
+              <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-zinc-500 shadow-sm">
+                {relay === 'connecting' ? 'connecting…' : 'relay offline'}
+              </span>
+            )}
+          </div>
+
+          {/* Proximity alert */}
+          {alert && (
+            <div className="absolute inset-x-3 bottom-3 z-[600] sm:left-auto sm:right-3 sm:w-[320px]">
+              <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-white p-3.5 shadow-xl">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-lg">
+                  📍
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-blue-600">
+                    You&apos;re nearby
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-bold text-zinc-900">{alert.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-zinc-500">
+                    {formatDistance(alert.metres)} away{alert.sub ? ` · ${alert.sub}` : ''}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setActive(alert.key);
+                      setAlert(null);
+                    }}
+                    className="mt-2 text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    Show on map →
+                  </button>
+                </div>
+                <button
+                  onClick={() => setAlert(null)}
+                  aria-label="Dismiss"
+                  className="shrink-0 text-zinc-300 hover:text-zinc-500"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -128,6 +128,9 @@ function TabIcon({ name, active }: { name: string; active: boolean }) {
           <circle cx="12" cy="10.4" r="2.3" {...common} />
         </>
       )}
+      {name === 'Saved' && (
+        <path d="M6.5 3.6h11a1 1 0 0 1 1 1v15.2l-6.5-4-6.5 4V4.6a1 1 0 0 1 1-1Z" {...common} />
+      )}
       {name === 'History' && (
         <>
           <circle cx="12" cy="12" r="8.4" {...common} />
