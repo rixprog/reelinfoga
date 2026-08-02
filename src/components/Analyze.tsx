@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -552,48 +553,67 @@ export function Analyze() {
               title: 'Foodspots',
               desc: 'Restaurants & cafes',
               icon: '🍔',
-              color: 'bg-orange-50/80 border-orange-100 text-orange-600 hover:bg-orange-100/60',
+              // Reel-portrait art in /public/categories, one per category.
+              image: '/categories/foodspots.jpg',
               href: '/reels?category=food_spot',
             },
             {
               title: 'Travel',
               desc: 'Places & stays',
               icon: '✈️',
-              color: 'bg-sky-50/80 border-sky-100 text-sky-600 hover:bg-sky-100/60',
+              image: '/categories/travel.jpg',
               href: '/reels?category=travel',
             },
             {
               title: 'Events',
               desc: 'Concerts & shows',
               icon: '🎟️',
-              color: 'bg-purple-50/80 border-purple-100 text-purple-600 hover:bg-purple-100/60',
+              image: '/categories/events.jpg',
               href: '/reels?category=deadline',
             },
             {
               title: 'Recipe',
               desc: 'Dishes & baking',
               icon: '🍳',
-              color: 'bg-rose-50/80 border-rose-100 text-rose-600 hover:bg-rose-100/60',
+              image: '/categories/recipe.jpg',
               href: '/reels?category=recipe',
             },
           ].map((cat) => (
             <Link
               key={cat.title}
               href={cat.href}
-              className={`group flex flex-col justify-between rounded-2xl border p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${cat.color}`}
+              className="group relative aspect-[9/16] overflow-hidden rounded-2xl border border-zinc-200/80 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="flex items-center justify-between">
-                <span className="grid size-11 place-items-center rounded-xl bg-white shadow-sm text-xl">
+              <Image
+                src={cat.image}
+                alt=""
+                fill
+                // Two across on phones, four on desktop — matches the grid so
+                // the browser never fetches a wider source than it paints.
+                sizes="(max-width: 640px) 50vw, 25vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+
+              {/* The prompts keep each photo's lower third calm, but the scrim
+                  guarantees the label holds up on the brighter ones. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <span className="grid size-9 place-items-center rounded-xl bg-white/95 text-base shadow-sm">
                   {cat.icon}
                 </span>
-                <svg className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <h3 className="mt-2.5 text-base font-bold text-white drop-shadow-sm">{cat.title}</h3>
+                <p className="mt-0.5 text-xs text-white/80">{cat.desc}</p>
               </div>
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-zinc-900 group-hover:text-zinc-950">{cat.title}</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">{cat.desc}</p>
-              </div>
+
+              <svg
+                className="absolute right-3 top-3 w-4 h-4 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           ))}
         </div>

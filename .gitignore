@@ -17,6 +17,12 @@ out/
 *.png
 *.json.xz
 
+# ...but artwork under public/ is source, not scraped media. Without this the
+# category tiles are silently dropped from commits and 404 on a fresh clone.
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.png
+
 # python
 __pycache__/
 *.py[cod]
