@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
+import { PlaceMap } from './PlaceMap';
 import { Card, Empty, Eyebrow, Pill } from './Shell';
 import { ReelPlayer } from './ReelPlayer';
 import { Thumb } from './Thumb';
@@ -133,6 +134,17 @@ export function ReelDetail({ shortcode }: { shortcode: string }) {
                 </div>
               ))}
             </dl>
+          )}
+
+          {/* Food spots only. Travel reels get the richer itinerary map from
+              TripPlanner, and everything else has nothing to plot. */}
+          {item.category === 'food_spot' && (
+            <div>
+              <Eyebrow>Where it is</Eyebrow>
+              <div className="mt-2">
+                <PlaceMap shortcode={shortcode} />
+              </div>
+            </div>
           )}
 
           {item.category === 'deadline' && item.deadline_date && (
