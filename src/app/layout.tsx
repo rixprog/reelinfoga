@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
+import { ProximityWatch } from '@/components/ProximityWatch';
 import { Header } from '@/components/Shell';
 import './globals.css';
 
@@ -25,6 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-full flex-col font-sans antialiased">
         <Header />
         <div className="flex-1">{children}</div>
+        {/* Watches the relay on every page, so walking past a saved food spot
+            alerts you wherever you are in the app — not only on /map. */}
+        <ProximityWatch />
       </body>
     </html>
   );

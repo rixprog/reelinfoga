@@ -9,6 +9,7 @@
  */
 const KEY = 'reelbrain.collections';
 const STAR = 'reelbrain.starred';
+const TRACK = 'reelbrain.tracking';
 
 export interface Collection {
   id: string;
@@ -71,6 +72,18 @@ export const collections = {
   },
 
   remove: (id: string) => write(KEY, collections.all().filter((c) => c.id !== id)),
+};
+
+/**
+ * Whether the phone's location relay is being watched.
+ *
+ * Persisted so the toggle on the map and the watcher in the layout agree, and
+ * so tracking survives leaving /map — otherwise navigating to Reels silently
+ * tore the socket down and the alerts stopped.
+ */
+export const liveTracking = {
+  get: () => read<boolean>(TRACK, false),
+  set: (on: boolean) => write(TRACK, on),
 };
 
 export const starred = {
