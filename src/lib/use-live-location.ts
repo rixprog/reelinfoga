@@ -10,9 +10,21 @@ export interface LivePosition {
 
 export type RelayStatus = 'off' | 'connecting' | 'live' | 'error';
 
-/** Where the phone relay publishes. Overridable so the demo box can move. */
-export const RELAY_URL =
-  process.env.NEXT_PUBLIC_RELAY_URL ?? 'ws://192.168.56.1:8787';
+/**
+ * Where the phone relay publishes.
+ *
+ * NEXT_PUBLIC_RELAY_URL wins, but it is baked in at build time, so a hardcoded
+ * default means a rebuild every time the machine's address changes — and a
+ * wrong one fails silently as "no alerts". Falling back to the host serving the
+ * page makes the common setup (relay and site on the same laptop) work with no
+ * configuration at all.
+ */
+export function relayUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_RELAY_URL;
+  if (configured) return configured;
+  if (typeof window === 'undefined') return 'ws://localhost:8787';
+  return `ws://${window.location.hostname}:8787`;
+}
 
 /**
  * Subscribes to the phone's location relay.
@@ -48,7 +60,7 @@ export function useLiveLocation(enabled: boolean) {
       setStatus('connecting');
       let ws: WebSocket;
       try {
-        ws = new WebSocket(RELAY_URL);
+        ws = new WebSocket(relayUrl());
       } catch {
         setStatus('error');
         return;

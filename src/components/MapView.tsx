@@ -9,7 +9,7 @@ import { Thumb } from './Thumb';
 import type { SavedItem } from '@/lib/store-client';
 import { liveTracking } from '@/lib/collections';
 import { categoryOf, placeKey } from '@/lib/ui';
-import { RELAY_URL, useLiveLocation } from '@/lib/use-live-location';
+import { relayUrl, useLiveLocation } from '@/lib/use-live-location';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -265,7 +265,7 @@ export function MapView() {
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-zinc-700 hover:bg-zinc-50 border border-zinc-200'
               }`}
-              title={RELAY_URL}
+              title={relayUrl()}
             >
               <span
                 className={`h-2 w-2 rounded-full ${
