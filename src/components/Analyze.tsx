@@ -1226,7 +1226,7 @@ export function Analyze() {
               <h3 className="text-lg font-bold text-zinc-900">Pro</h3>
             </div>
             <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-4xl font-extrabold text-zinc-900">₹299</span>
+              <span className="text-4xl font-extrabold text-zinc-900">₹199</span>
               <span className="text-sm text-zinc-400">/month</span>
             </div>
             <ul className="space-y-3 text-sm text-zinc-700 mb-8">
@@ -1255,7 +1255,7 @@ export function Analyze() {
               <h3 className="text-lg font-bold text-zinc-900">Premium</h3>
             </div>
             <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-4xl font-extrabold text-zinc-900">₹599</span>
+              <span className="text-4xl font-extrabold text-zinc-900">₹499</span>
               <span className="text-sm text-zinc-400">/month</span>
             </div>
             <ul className="space-y-3 text-sm text-zinc-600 mb-8">

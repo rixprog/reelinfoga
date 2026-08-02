@@ -8,7 +8,39 @@ import { Card, Empty, Eyebrow, Pill } from './Shell';
 import { Thumb } from './Thumb';
 import { type Collection, collections, starred } from '@/lib/collections';
 import type { SavedItem } from '@/lib/store-client';
-import { categoryOf } from '@/lib/ui';
+import { categoryOf, detailLine } from '@/lib/ui';
+
+/**
+ * Everything about a reel worth typing into a search box.
+ *
+ * Built from named fields rather than the whole payload: stringifying that
+ * would also match the model's own reasoning text, so searching "budget" would
+ * hit every reel whose rationale happened to use the word.
+ */
+function haystack(i: SavedItem): string {
+  const p = (i.payload ?? {}) as Record<string, any>;
+  return [
+    i.title,
+    i.owner,
+    categoryOf(i.category).one,
+    detailLine(i),
+    p.place_name,
+    p.area,
+    p.city,
+    p.state,
+    p.destination,
+    p.cuisine,
+    p.organisation,
+    p.topic,
+    p.product_category,
+    ...(p.dishes ?? []),
+    ...(p.product_names ?? []),
+    ...(i.hashtags ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
 
 export function SavedView() {
   const [items, setItems] = useState<SavedItem[]>([]);
@@ -17,6 +49,7 @@ export function SavedView() {
   const [playing, setPlaying] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'starred' | 'folders'>('all');
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
 
   const syncLocal = () => {
     setCols(collections.all());
@@ -37,6 +70,20 @@ export function SavedView() {
     () => items.filter((i) => stars.includes(i.shortcode)),
     [items, stars]
   );
+
+  /** The list the grid actually renders: current tab, narrowed by the query. */
+  const visible = useMemo(() => {
+    const base = activeTab === 'starred' ? starredItems : items;
+    const needle = q.trim().toLowerCase();
+    if (!needle) return base;
+    // Every word must appear somewhere, so "kerala food" narrows rather than
+    // widening the way an OR would.
+    const words = needle.split(/\s+/);
+    return base.filter((i) => {
+      const hay = haystack(i);
+      return words.every((w) => hay.includes(w));
+    });
+  }, [activeTab, items, starredItems, q]);
 
   const placesCount = useMemo(
     () => items.filter((i) => (i.payload as any)?.lat || (i.payload as any)?.place_name).length,
@@ -185,18 +232,57 @@ export function SavedView() {
               ⭐ Starred ({stars.length})
             </button>
           </div>
+
+          <div className="relative w-full max-w-[260px]">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search saved reels…"
+              aria-label="Search saved reels"
+              className="w-full rounded-full border border-zinc-200 bg-slate-50 py-1.5 pl-8 pr-8 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-violet-400 focus:bg-white"
+            />
+            <svg
+              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+            </svg>
+            {q && (
+              <button
+                onClick={() => setQ('')}
+                aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
           <div className="py-12 text-center text-xs text-zinc-400">Loading saved library…</div>
-        ) : (activeTab === 'starred' ? starredItems : items).length === 0 ? (
+        ) : visible.length === 0 ? (
           <Empty
-            title={activeTab === 'starred' ? 'No starred reels yet' : 'No saved reels'}
-            body="Star any reel card in your library to add it to your shortlist!"
+            title={
+              q.trim()
+                ? `Nothing matches “${q.trim()}”`
+                : activeTab === 'starred'
+                  ? 'No starred reels yet'
+                  : 'No saved reels'
+            }
+            body={
+              q.trim()
+                ? 'Try a place, a dish, a creator, or a category.'
+                : 'Star any reel card in your library to add it to your shortlist!'
+            }
           />
         ) : (
           <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-            {(activeTab === 'starred' ? starredItems : items).map((item) => {
+            {visible.map((item) => {
               const cat = categoryOf(item.category);
               const isStarred = stars.includes(item.shortcode);
 
